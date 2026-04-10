@@ -39,7 +39,7 @@ Or add to your project's `.claude/settings.json`:
 skills/                    — Plugin skills (loaded by Claude Code)
 agents/                    — Plugin agents (shared across skills)
 .inspiration/
-  heart/                   — Primary influences (Superpowers, Compound Engineering)
+  core/                    — Primary influences (Superpowers, Compound Engineering)
   other/                   — Secondary influences (CC10X, Matt Pocock, ECC)
 .docs/                     — Framework design docs, engineering standards, specs
 ```

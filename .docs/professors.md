@@ -122,7 +122,7 @@ Incorporates best elements from all three professors:
 **KEPT from Prof 2:** Stable requirement IDs (R1, R2...), `resume_from` field, requirement grouping by theme, "no retroactive weakening" rule, alternatives from different axes, agent coverage in Research Context, R-ID tags on Open Questions, implementing agent test.
 **CHANGED:**
 1. **Removed Decision Register** — it duplicates section content and requires constant sync. Inline R-IDs and D-IDs in each section provide the same traceability without a shadow copy that drifts. If `/plan` needs a summary, it reads the Requirements + Success Criteria sections which ARE the authoritative source.
-2. **Added Cross-Platform Contracts subsection** to Affected Systems — forces explicit identification of shared types, API shapes, and data formats consumed across platforms. This is the #1 multi-platform brainstorm gap: changing a backend API without considering how Kotlin mobile and React frontend consume it.
+2. **Added Cross-Platform Contracts subsection** to Affected Systems — forces explicit identification of shared types, API shapes, and data formats consumed across platforms. This is the #1 multi-platform brainstorm gap: changing a backend API without considering how cross-platform consumers depend on it.
 3. **Added Integration Points subsection** for third-party services — separates "systems we control" from "systems we don't control" (different risk profiles entirely).
 4. Research Context requires explicit **"what was NOT searched"** alongside findings.
 5. Lightweight template further streamlined — R-IDs in Scope + Success Criteria sections, no separate Requirements section, no Decision Register.
@@ -142,7 +142,7 @@ Incorporates best elements from all three professors:
 ### code-explorer.md — Professor 3 changes
 **KEPT from Prof 2:** "What Was NOT Found" section, grep hit count logging, MAP.md fallback, attribution rule (model-knowledge labeled), coverage reporting, claims-of-absence protocol, budget overflow behavior.
 **CHANGED:**
-1. **Added cross-platform contract detection as step 4b** — when a backend API or shared type is found, actively search for consumers in other parts of the codebase (mobile, frontend, Go). The #1 gap in multi-platform work: changing a producer without knowing consumers.
+1. **Added cross-platform contract detection as step 4b** — when a backend API or shared type is found, actively search for consumers in other parts of the codebase. The #1 gap in multi-platform work: changing a producer without knowing consumers.
 2. Added **"Cross-Platform Contracts" output section** — makes contract relationships visible to the brainstorm skill as structured data, not buried in prose.
 3. Added **integration pattern detection** — when third-party service code is found, note the SDK version, auth method, error handling, retry patterns. Gives the brainstorm concrete facts about existing integrations instead of assumptions.
 4. Each finding gets a **"why it matters" annotation** — the caller shouldn't have to interpret raw facts. The agent knows the context; it should explain relevance.
@@ -356,5 +356,5 @@ Praised: Same items as Reviewer 1 plus cross-platform contract analysis, separat
 - Has `tree` command available (macOS)
 - Has `rtk` installed (token-optimized CLI proxy)
 - Wants educational insights (explanatory output style)
-- Startup context: small team, ship fast, multi-platform (Kotlin/Compose + TS/Fastify + React + Go + AWS/K8s)
-- 12+ third-party services (PostgreSQL, Valkey, Stripe, Supabase Auth, Firebase, Veriff, Crisp, OneSignal, Singular, MixPanel, DataDog)
+- Works well for teams that ship fast across multi-platform projects
+- Designed to handle projects with many third-party service integrations

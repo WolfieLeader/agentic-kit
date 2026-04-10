@@ -2,18 +2,7 @@
 
 ## Overview
 
-I am a part of a new startup with small team, our product is a mobile app that we need to develop as fast as possible. Our current project structure and tech stack is the following:
-
-- Project
-  - Mobile - Kotlin/Compose Multiplatform
-  - Backend - TypeScript + Fastify
-  - Frontend - TypeScript + React
-  - Backend for cryptography operations - Go
-  - Infra - Docker, Kubernetes, Terraform, AWS
-
-(3rd party services we use: PostgreSQL, Valkey, Stripe Pay-in + Borderless Pay-out + Supabase Auth + Firebase Crashlitics + Veriff KYC + Crisp Support + OneSignal + Singular + MixPanel + DataDog)
-
-I need to come up with a framework / workflow / methodology to develop efficiently, in parallel (git worktrees), faster, with much more confidence, and better software overall.
+A framework / workflow / methodology to develop efficiently, in parallel (git worktrees), faster, with more confidence, and better software overall. Designed for small teams shipping multi-platform products.
 
 ## GitHub Repositories Which are Inside this Project
 
@@ -58,7 +47,7 @@ Router detects ERROR keywords → `bug-investigator` (12 mandatory steps: sympto
 
 ### Everything Claude Code (Toolkit library)
 
-181 skills, 46 agents, 89 rules across 12+ languages. Cherry-pick for our stack: `kotlin-patterns`, `compose-multiplatform-patterns`, `frontend-patterns`, `backend-patterns`, `docker-patterns`, `api-design`, `database-migrations`, `security-review`, `deployment-patterns`. Language-specific reviewers: `typescript-reviewer`, `kotlin-reviewer`. Hooks: `block-no-verify`, `commit-quality`, `quality-gate`, `format-typecheck`.
+181 skills, 46 agents, 89 rules across 12+ languages. Cherry-pick relevant patterns per project: language-specific patterns, `api-design`, `database-migrations`, `security-review`, `deployment-patterns`. Language-specific reviewers available. Hooks: `block-no-verify`, `commit-quality`, `quality-gate`, `format-typecheck`.
 
 ### Matt Pocock's Skills (Design philosophy)
 

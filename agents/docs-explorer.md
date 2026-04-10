@@ -57,7 +57,7 @@ Read matching files from:
 - The finding is about a third-party service (not internal architecture), AND
 - It is reusable beyond this single brainstorm (general service behavior, not task-specific details)
 
-Format: `# [Topic]` -> `Researched: YYYY-MM-DD` -> `Sources: [URLs]` -> `Key Findings` -> `Relevant to Our Stack`
+Format: `# [Topic]` -> `Researched: YYYY-MM-DD` -> `Sources: [URLs]` -> `Key Findings` -> `Relevant to Project`
 
 ### 4. Synthesize
 

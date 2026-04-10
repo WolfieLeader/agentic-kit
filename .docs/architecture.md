@@ -52,8 +52,8 @@ Both agents return **light structured output**:
       brainstorm.md      — output of /letsgo
       plan.md            — output of /plan
   researches/            — shared, reusable knowledge (not tied to a single plan)
-    stripe-webhooks.md
-    supabase-auth.md
+    payment-webhooks.md
+    auth-provider.md
   solutions/             — (future: compound knowledge capture)
   MAP.md                 — dynamic project navigation index
 ```
@@ -61,7 +61,7 @@ Both agents return **light structured output**:
 - **Brainstorm and plan are co-located** in the same folder under `.docs/plans/<slug>/` because the brainstorm is part of the planning process
 - **Researches are shared** — not tied to a single plan, reusable across future work
 - **MAP.md** is a dynamic navigation index for the monorepo. Maintained by an agent after completed work. Generated via `rtk tree`. Format rules:
-  - **Collapsed KMP notation**: document the boilerplate path pattern once at the top (e.g., `> Paths follow: <module>/src/{commonMain,androidMain,iosMain}/kotlin/com/letsgo/<module-package>/`), then show only the meaningful logical structure below
+  - **Collapsed platform notation**: document the boilerplate path pattern once at the top (e.g., `> Paths follow: <module>/src/<platform>/<lang>/<org>/<module-package>/`), then show only the meaningful logical structure below
   - **`[README]` markers** on directories that have a README — signals the code-explorer where to dive deeper
   - **Comments only when not self-explanatory** — `repository/`, `model/`, `usecase/` need no comment; `di/` gets "dependency injection setup"
   - Example:
@@ -76,18 +76,18 @@ Both agents return **light structured output**:
         presentation/
           screen/
       auth/
-        data/              — Supabase integration [README]
+        data/              — external-service integration [README]
     core/
       network/             [README]
       di/                  — dependency injection setup
     ```
-- **Naming convention**: `YYMMDD-<slug>` (e.g., `250410-stripe-webhooks`)
+- **Naming convention**: `YYMMDD-<slug>` (e.g., `250410-payment-webhooks`)
 - **Folder creation is eager** — `/letsgo` creates the folder and `brainstorm.md` immediately. An incomplete folder (brainstorm.md without plan.md) signals "work started, not yet planned"
 
 ## Skill-to-Skill Handoff
 
 Follows CE's artifact discovery pattern (session-independent):
-1. If argument provided (`/plan 250410-stripe-webhooks`) → use that directly
+1. If argument provided (`/plan 250410-payment-webhooks`) → use that directly
 2. If no argument → scan `.docs/plans/*/` for folders with `brainstorm.md` but no `plan.md`
 3. If exactly one match → propose it
 4. If multiple matches → list them, ask user to pick

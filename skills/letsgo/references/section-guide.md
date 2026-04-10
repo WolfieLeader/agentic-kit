@@ -110,7 +110,7 @@ If a backend API is changing, identify which clients (mobile, frontend, Go servi
 
 Present as: Contract | Producer | Consumer(s) | Impact.
 
-This is the most commonly skipped analysis in multi-platform work. A backend developer changes an API response shape and doesn't realize the Kotlin mobile app parses that exact shape. The framework forces this question.
+This is the most commonly skipped analysis in multi-platform work. A backend developer changes an API response shape and doesn't realize a mobile client parses that exact shape. The framework forces this question.
 
 If no cross-platform contracts are affected, state that explicitly: "Change is contained within [system]."
 

@@ -40,7 +40,7 @@ Superpowers never lets you skip (prevents rationalization). CE lets you right-si
 | **Slicing** | Vertical (one feature at a time) | Vertical (one feature at a time) | Vertical tracer bullets (first test proves full path) | Test pyramid (unit/integration/E2E) |
 | **Red-Green-Refactor** | Detailed flowchart with verification diamonds | Same + git checkpoint commits at each phase | Planning → tracer bullet → incremental loop → refactor after all green | User journeys → test cases → RED → GREEN → refactor → coverage check |
 | **Coverage target** | Not quantified (implicit 100%) | **80%+** explicit (statements, branches, functions, lines) | Not quantified | **80%+** explicit |
-| **Mocking rules** | "Only if unavoidable" | Boundary-only + factory pattern for test data | Boundary-only (external APIs, DBs, time) + dependency injection | External deps only + specific patterns (Supabase, Redis, OpenAI) |
+| **Mocking rules** | "Only if unavoidable" | Boundary-only + factory pattern for test data | Boundary-only (external APIs, DBs, time) + dependency injection | External deps only + specific patterns (e.g., hosted DB clients, caches, LLM APIs) |
 | **Process discipline** | Psychological (rationalizations table, 12 red flags) | Process-strict (watch mode ban, process cleanup, checkpoint commits) | Design-focused (planning confirmation, per-cycle checklist) | Best practices (watch mode OK, pre-commit hooks) |
 | **Failure handling** | "Test passes immediately? You're testing existing behavior" | Runtime RED vs compile-time RED gates explicitly defined | Per-cycle checklist (behavior? public interface? survives refactor?) | "Tests should fail before implementation" |
 | **Loop cap** | Red flags + checklist | Watch mode prohibition + cleanup verification | "Never refactor while RED" | Pre-commit hooks |
@@ -102,7 +102,7 @@ Superpowers and CC10X want plans to be executable by agents without questions (c
 
 ### Key Insight
 
-The progression is clear: Superpowers = single reviewer, human reads prose. CC10X = single reviewer, machine-readable contract enables automation. CE = orchestrated multi-persona with autofix. For a startup, CE's conditional reviewer selection is powerful — you only pay for security review when auth code changes. But CC10X's zero-finding halt catches lazy reviews that CE doesn't enforce.
+The progression is clear: Superpowers = single reviewer, human reads prose. CC10X = single reviewer, machine-readable contract enables automation. CE = orchestrated multi-persona with autofix. For a small team, CE's conditional reviewer selection is powerful — you only pay for security review when auth code changes. But CC10X's zero-finding halt catches lazy reviews that CE doesn't enforce.
 
 ---
 
@@ -168,7 +168,7 @@ Both enforce the same Iron Law but serve different audiences. Superpowers assume
 
 ### Key Insight
 
-CE's ce:work is the most practical for a startup — it handles "just do this thing" without requiring a formal plan. CC10X's router is the most powerful orchestrator but requires the full CC10X ecosystem. Superpowers' subagent-driven gives the clearest review discipline (two-stage: spec then quality). A unified approach: CE's complexity routing to decide ceremony level + Superpowers' two-stage review + CC10X's phase contracts for complex work.
+CE's ce:work is the most practical for a small team — it handles "just do this thing" without requiring a formal plan. CC10X's router is the most powerful orchestrator but requires the full CC10X ecosystem. Superpowers' subagent-driven gives the clearest review discipline (two-stage: spec then quality). A unified approach: CE's complexity routing to decide ceremony level + Superpowers' two-stage review + CC10X's phase contracts for complex work.
 
 ---
 
@@ -189,7 +189,7 @@ CE's ce:work is the most practical for a startup — it handles "just do this th
 
 ### Key Insight
 
-CE's .env auto-copying is critical for multi-service teams. With a TypeScript backend + React frontend + mobile app, you likely have multiple .env files with API keys, database URLs, etc. Superpowers' approach will leave your worktree broken until you manually copy secrets. CE's manager script handles this automatically.
+CE's .env auto-copying is critical for multi-service projects. With multiple services or platforms, you likely have multiple .env files with API keys, database URLs, etc. Superpowers' approach will leave your worktree broken until you manually copy secrets. CE's manager script handles this automatically.
 
 ---
 

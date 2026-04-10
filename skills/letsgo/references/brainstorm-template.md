@@ -1,6 +1,6 @@
 # Brainstorm Document Template
 
-Use this template when writing `.docs/plans/YYMMDD-<slug>/brainstorm.md` in Phase 5.
+Use this template when writing `.docs/work/YYMMDD-<slug>/brainstorm.md` in Phase 5.
 
 The brainstorm.md captures **decisions and their rationale** — not a transcript. Write it so `/plan` reading it in a fresh session has full context without conversation history. Write it so a teammate who was NOT in the brainstorm conversation can understand what was decided and why.
 
@@ -10,10 +10,13 @@ The brainstorm.md captures **decisions and their rationale** — not a transcrip
 ---
 title: "[Descriptive title, not the slug]"
 date: YYYY-MM-DD
+type: build | fix | explore
 scope: standard | deep
 status: draft | complete
+module: [primary module this work targets]
+tags: [searchable, keywords, for, grep]
+affected_systems: [list of systems touched]
 resume_from: [section number when status is draft, omit when complete]
-affected_systems: [backend, mobile, frontend, go, infra]
 ---
 
 ## Purpose & Context
@@ -130,8 +133,11 @@ Each success criterion must trace to at least one requirement ID. Every requirem
 ---
 title: "[Title]"
 date: YYYY-MM-DD
+type: build | fix | explore
 scope: lightweight
 status: draft | complete
+module: [primary module]
+tags: [keywords]
 affected_systems: [comma-separated list]
 ---
 

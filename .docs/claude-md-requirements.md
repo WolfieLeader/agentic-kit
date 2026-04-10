@@ -7,10 +7,9 @@
 # Workflow Artifacts
 All AI workflow artifacts live in `.docs/` (hidden directory to avoid polluting grep/rg search results).
 Structure:
-  .docs/plans/<YYMMDD-slug>/    — brainstorm.md + plan.md (co-located per work item)
-  .docs/researches/             — shared, reusable research (not tied to one plan)
-  .docs/solutions/              — compound knowledge capture (future)
+  .docs/work/<YYMMDD-slug>/     — brainstorm.md + plan.md + retro.md (full lifecycle per work item)
   .docs/MAP.md                  — dynamic project navigation index
+All files use YAML frontmatter (module, tags, type) for grep-first retrieval.
 ```
 **Why in CLAUDE.md**: Skills reference these paths, but `rg` and `grep` skip dotdirs by default. Without this note, an agent doing codebase exploration won't know to look in `.docs/` for existing research, plans, or solutions. Every skill that reads or writes to `.docs/` depends on this being documented.
 

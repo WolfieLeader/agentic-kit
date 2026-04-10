@@ -47,7 +47,7 @@ The user's methodology spec has been split into focused files:
 | `skills/letsgo/references/section-guide.md` | 159 | — | All 4 section-guide changes applied |
 | `skills/letsgo/references/brainstorm-template.md` | 113 | — | All 6 template changes applied |
 | `agents/code-explorer.md` | 93 | 120 | 15-file budget + attribution rule |
-| `agents/docs-explorer.md` | 103 | 120 | `.docs/plans/` fix + condensed escalation |
+| `agents/docs-explorer.md` | 103 | 120 | `.docs/work/` fix + condensed escalation |
 
 **Key architectural decisions from R1/R2 synthesis:**
 - HARD-GATEs consolidated with `name` attributes (Expert 3) — referenceable, prominent
@@ -148,9 +148,9 @@ Incorporates best elements from all three professors:
 4. Each finding gets a **"why it matters" annotation** — the caller shouldn't have to interpret raw facts. The agent knows the context; it should explain relevance.
 
 ### docs-explorer.md — Professor 3 changes
-**KEPT from Prof 2:** `.docs/plans/` access rule (completed = reference), principle-based escalation heuristic, grep hit count logging, "What Was NOT Found" output section, site discovery protocol, three-tier attribution, coverage reporting, stale-info dates.
+**KEPT from Prof 2:** `.docs/work/` access rule (completed = reference), principle-based escalation heuristic, grep hit count logging, "What Was NOT Found" output section, site discovery protocol, three-tier attribution, coverage reporting, stale-info dates.
 **CHANGED:**
-1. External research persistence rule **tightened** — ONLY persist when the finding is reusable AND the topic is a third-party service. Internal architecture decisions don't need `.docs/researches/` files.
+1. External research persistence rule **tightened** — ONLY persist when the finding is reusable AND the topic is a third-party service. Internal architecture decisions don't need separate research artifacts.
 2. Added **"Prior Decisions That Constrain This Work"** as a highlighted output subsection — the #1 value of docs-explorer is surfacing existing decisions that the brainstorm must respect. Burying these in a generic "Key Findings" list means they get overlooked.
 3. Synthesis priority order adds **"cross-cutting constraints"** (e.g., CLAUDE.md rules that apply broadly) as first priority — these override everything else.
 4. Each finding gets a **"relevance" annotation**: direct constraint vs. background context. The brainstorm skill shouldn't have to judge which findings are blocking.

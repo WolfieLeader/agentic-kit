@@ -35,19 +35,20 @@ Or add to your project's `.claude/settings.json`:
 ## Structure
 
 ```
+.claude-plugin/            — Plugin manifest
 skills/                    — Plugin skills (loaded by Claude Code)
 agents/                    — Plugin agents (shared across skills)
-inspiration/
+.inspiration/
   heart/                   — Primary influences (Superpowers, Compound Engineering)
   other/                   — Secondary influences (CC10X, Matt Pocock, ECC)
-docs/                      — Framework design docs, engineering standards, specs
+.docs/                     — Framework design docs, engineering standards, specs
 ```
 
 ## Docs
 
-- `docs/architecture.md` — Framework design principles and structure
-- `docs/engineering-standards.md` — Rules for building skills and agents
-- `docs/skill-specs.md` — Behavioral specs for each skill
-- `docs/professors.md` — Expert review findings and fix audit trail
-- `docs/sources.md` — Source framework summaries
-- `docs/compare.md` — Side-by-side comparison of source frameworks
+- `.docs/architecture.md` — Framework design principles and structure
+- `.docs/engineering-standards.md` — Rules for building skills and agents
+- `.docs/skill-specs.md` — Behavioral specs for each skill
+- `.docs/professors.md` — Expert review findings and fix audit trail
+- `.docs/sources.md` — Source framework summaries
+- `.docs/compare.md` — Side-by-side comparison of source frameworks

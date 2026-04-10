@@ -1,0 +1,11 @@
+{
+  "name": "agentic-kit",
+  "version": "0.1.0",
+  "description": "AI-driven development framework — structured brainstorming, planning, and implementation workflows",
+  "author": {
+    "name": "WolfieLeader"
+  },
+  "repository": "https://github.com/WolfieLeader/agentic-kit",
+  "license": "MIT",
+  "keywords": ["brainstorming", "planning", "tdd", "workflows", "development"]
+}

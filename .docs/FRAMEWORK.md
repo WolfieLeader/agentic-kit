@@ -11,6 +11,11 @@ A meta-framework for AI-assisted software development. One entry point, three wo
 
 **Core sources:** Compound Engineering (lifecycle, agents, artifacts), Superpowers (discipline, gates, TDD, verification), CC10X (confidence scoring, circuit breakers), Matt Pocock (TDD philosophy, deep modules, behavioral testing), ECC (agent design, file budgets, grep-first search).
 
+**Design principles:**
+- **Context window is gold — use the disk.** Every phase that produces output writes to disk. Handoff between phases is via persisted artifacts. Skills are session-independent — you can `/compact`, start a new conversation, or come back days later.
+- **Trust the implementing agent.** Plans describe what to build, not how to type it.
+- **Right-size ceremony to scope.** Lightweight changes get lightweight process. But every change gets something.
+
 ## Architecture
 
 ```
@@ -27,7 +32,7 @@ EXPLORE:             synthesize explorer findings -> persist research if externa
 
 Post-cycle (manual):
   /propose  -> aggregate retros -> draft change proposals
-  /compound -> execute accepted proposals -> CHANGELOG.md
+  /compound -> execute accepted proposals -> .docs/CHANGELOG.md
 ```
 
 Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
@@ -74,7 +79,32 @@ Dispatched by the router once it has formed an assumption about the task (may re
 - Persists external research to `.docs/research/<topic>.md`
 - Attributes findings to source (codebase find vs model knowledge vs external research)
 
-### Review Agents (sonnet 4.6)
+**Both explorers return structured output:**
+```
+## Key Findings
+...
+## Relevant Files
+...
+## Open Questions
+...
+```
+
+### Plan Review Agents (sonnet 4.6)
+
+Dispatched during plan review gate for std/deep tiers. Validate the plan before implementation begins. Inspired by CE's 8 document-review agents (design-lens, security-lens, scope-guardian, coherence, feasibility, product-lens, adversarial).
+
+| Agent | Focus |
+|---|---|
+| `coherence-reviewer` | Internal consistency — contradictions between sections, terminology drift, structural issues |
+| `feasibility-reviewer` | Will the proposed approach survive contact with reality? Architecture conflicts, implementability |
+| `scope-guardian` | Scope alignment — challenges unnecessary abstractions, premature frameworks, unjustified complexity |
+
+**Plan review rules:**
+- Same confidence gating as code review (suppress below 0.60, P0 at 0.50+)
+- Findings feed back into plan revision (max 3 retries before escalating to user)
+- Stack-agnostic: projects can add domain-specific plan reviewers (security-lens, product-lens, etc.)
+
+### Code Review Agents (sonnet 4.6)
 
 Dispatched during verify/review for std/deep tiers only. Read-only, return structured findings.
 
@@ -95,11 +125,11 @@ Dispatched during verify/review for std/deep tiers only. Read-only, return struc
 | `api-contract-reviewer` | Routes, schemas, type signatures, versioning |
 | `data-migrations-reviewer` | Schema changes, backfills, migrations |
 
-**Review rules:**
+**Code review rules:**
 - Confidence-gated: suppress findings below 0.60. P0 findings at 0.50+ survive.
 - Severity scale: P0 (critical) -> P1 (high) -> P2 (moderate) -> P3 (low)
 - Zero-finding halt: if nothing found, say so and stop. No inventing issues.
-- Stack-agnostic: no language-specific reviewers in the framework. Projects add their own.
+- Stack-agnostic: no language-specific reviewers in the framework. Projects add their own (CE has 53 agents including language-specific reviewers like Rails, Python, TypeScript — those are project-level, not framework-level).
 
 ### Execution Agents (opus 4.6)
 
@@ -226,7 +256,7 @@ Per unit:
 
 **Plan review gate (4 checks, fail-closed):**
 1. Dependency coherence (inline) — no circular deps, no missing deps
-2. Completeness (subagent) — all brief requirements addressed
+2. Completeness (plan review agents) — `coherence-reviewer`, `feasibility-reviewer`, `scope-guardian` (see Plan Review Agents)
 3. No placeholders (inline) — hard ban on TBD, TODO, etc.
 4. Testability (inline) — every unit has test scenarios
 
@@ -318,7 +348,7 @@ Single step, scales by tier.
 - Brief/plan compliance — does the implementation match what was specified?
 
 **Standard/Deep — Review (multi-persona, subagent):**
-- Dispatch always-on + conditional review agents (see Agents section)
+- Dispatch always-on + conditional code review agents (see Agents section)
 - Confidence-gated findings
 - Severity-ordered results
 - Findings acted on by priority:
@@ -369,16 +399,19 @@ This makes retros valuable for propose/compound because they capture real-world 
 - Prevention — how to avoid recurrence
 
 **Root cause categories for "What Went Wrong":**
-1. Poor user description
-2. Incorrect scope/tier
-3. Poor brief decisions
-4. Stale research/docs
-5. Poor CLAUDE.md
-6. Poor code patterns/structure
-7. Poor test coverage
-8. Poor enforcement
-9. Poor skill behavior
-10. External/environmental
+
+| # | Category | Meaning |
+|---|---|---|
+| 1 | Poor user description | Ambiguous, incomplete, or misleading request |
+| 2 | Incorrect scope/tier | Router misclassified lightweight/standard/deep |
+| 3 | Poor brief decisions | Wrong approach chosen, missed constraints |
+| 4 | Stale research/docs | Research or docs contain outdated information |
+| 5 | Poor CLAUDE.md | Project instructions missing or misleading |
+| 6 | Poor code patterns/structure | Codebase structure caused confusion or bugs |
+| 7 | Poor test coverage | Pre-existing gap in tests |
+| 8 | Poor enforcement | Verification didn't catch a problem |
+| 9 | Poor skill behavior | Framework bug → create GitHub issue |
+| 10 | External/environmental | Third-party service, CI, environment issue |
 
 **MAP.md maintenance:** Retros that touch new modules or paths incrementally update MAP.md.
 
@@ -439,7 +472,7 @@ Executes accepted proposals after team review.
    - Replace — misleading, better replacement exists
    - Delete — no longer useful (git preserves history)
 4. **Write** to `.docs/compound/NNN-compound.md` logging what changed
-5. **Append** to `CHANGELOG.md`
+5. **Append** to `.docs/CHANGELOG.md`
 
 ---
 
@@ -462,7 +495,7 @@ Executes accepted proposals after team review.
 
 **Design principle:** All artifacts live in `.docs/` (dotdir). `rg` and `grep` skip dotdirs by default, preventing pollution of codebase searches.
 
-**MAP.md:** Essential infrastructure. Agent-friendly project navigation index (not `.docs/`, the project codebase). Generated via `rtk tree`, maintained incrementally via retros. Compound cleans up stale entries. Format rules:
+**MAP.md:** Essential infrastructure. Agent-friendly project navigation index (not `.docs/`, the project codebase). Generated via `rtk tree` / `tree` / `ls` (whichever is available), maintained incrementally via retros. Compound cleans up stale entries. Format rules:
 - Tree structure with annotations, not markdown formatting
 - Collapsed platform notation: document the boilerplate path pattern once at top, then show meaningful logical structure
 - `[README]` markers on directories that have a README
@@ -626,6 +659,28 @@ Changes:
 | Explorer agents | Sonnet 4.6 | Fast, cheap, focused search and retrieval |
 | Execute agents | Opus 4.6 | Code quality matters most here |
 | Review agents | Sonnet 4.6 | Focused review, scoped analysis |
+
+## Skill & Agent File Budgets
+
+| Target | Budget | Why |
+|---|---|---|
+| SKILL.md | < 200 lines | Loaded on every invocation — competes with codebase context |
+| Agent files | < 120 lines | Agents have their own context windows — every instruction line competes with files they need to read |
+| References | On-demand via Read | Use `references/` folder for phase-specific detail, loaded only when needed |
+
+**Placeholder two-tier system:**
+- **Hard ban** (auto-reject): "TBD", "TODO", "etc.", "similar", "and so on", "as needed"
+- **Soft ban** (flag + replace): "appropriate", "relevant", "necessary", "proper", "handle accordingly", "standard", "as described above"
+- Principle: if an implementing agent reading the phrase would need to make a judgment call, it's a placeholder
+
+## Project CLAUDE.md Requirements
+
+The project's `CLAUDE.md` must include so agents have the right context:
+
+1. **Workflow artifacts directory** — `.docs/` location, structure, YAML frontmatter convention
+2. **Available CLI tools** — what's installed (`tree`, `rtk`, etc.) so agents use the right commands
+3. **Tech stack** — languages, frameworks, test runners per platform
+4. **Conventions** — error handling, naming, patterns specific to this project
 
 ## Hard Gates
 

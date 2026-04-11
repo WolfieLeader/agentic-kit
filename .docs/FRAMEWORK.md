@@ -185,6 +185,11 @@ The only user-facing entry point for work. Three jobs:
 
 **Shortcuts:** If the user explicitly states urgency or provides a clear spec, the router fast-tracks. It doesn't force questioning when clarity already exists.
 
+**Gotchas:**
+- Classify after understanding, not before — rushed routing leads to wrong tier, wrong pipeline, wasted work
+- Question lightweight classification — most tasks touching 2+ files or 2+ concerns are standard
+- Dispatch explorers with specific search terms, not "look around"
+
 ### Trace (FIX only)
 
 Gate that determines if the issue is a real bug. No artifact produced — findings (reproduction result, hypothesis, severity) stay in session context and flow forward to sketch (std/deep) or directly to craft (lightweight).
@@ -198,6 +203,10 @@ Gate that determines if the issue is a real bug. No artifact produced — findin
    - Lightweight bug -> craft (trace context flows in-session)
    - Std/deep bug -> sketch (trace context informs FIX mode sections)
 6. **Upgrade heuristic** — if trace reveals the fix touches 3+ files or 2+ subsystems, or root cause is unclear after initial investigation, propose upgrade to std/deep. User confirms.
+
+**Gotchas:**
+- Reproduce before hypothesizing — confirm the bug exists before explaining why
+- Distinguish symptom from cause — "the API returns 500" is a symptom, not a root cause
 
 ### Sketch (BUILD and FIX, std/deep only)
 
@@ -231,6 +240,10 @@ Captures **what** and **why**. One skill, two modes. Produces `sketch.md`.
 - Research context (prior retros on this module, similar past bugs)
 - Blocking vs deferred open questions
 
+**Gotchas:**
+- Show all approaches before recommending one — anchoring on the first idea skips better alternatives
+- Separate blocking questions from deferred ones — blocking questions must resolve before blueprint
+
 ### Blueprint (BUILD and FIX, std/deep only)
 
 Defines **how**. Produces `blueprint.md`. Behavioral goals, not code.
@@ -240,19 +253,14 @@ Defines **how**. Produces `blueprint.md`. Behavioral goals, not code.
 Per unit:
 - Goal (behavioral, what it should do)
 - Dependencies (which units must complete first — DAG rule: no circular deps)
+- Independent (yes/no — can this unit be worked in parallel with other independent units? Drives craft dispatch.)
 - Confidence (GREEN / YELLOW / RED)
 - Affected systems
 - Approach (behavioral description, NOT code)
 - Test scenarios (happy path, edge cases, error paths)
 - Verification criteria
 
-**Durable decisions:** top-level section for decisions that cross units.
-- API routes and shapes
-- Database schema changes
-- Shared types and contracts
-- Auth/authz boundaries
-- Service boundaries
-- Cross-platform impacts
+**Durable decisions:** top-level section for decisions that cross implementation units (e.g., API routes, database schema, shared types, auth boundaries, service boundaries, cross-platform impacts).
 
 **Blueprint review gate (4 checks, fail-closed):**
 1. Dependency coherence (inline) — no circular deps, no missing deps
@@ -264,6 +272,10 @@ Max 3 review retries before escalating to user.
 
 **What blueprints do NOT contain:** implementation code, exact shell commands, file-level diffs. Blueprints describe what to build, not how to type it. Trust the crafting agent.
 
+**Gotchas:**
+- Describe behavior, not implementation — "validates email format" not `if (!email.match(/regex/))`
+- Flag unit independence explicitly — units with shared state or sequential deps need dispatch guidance
+
 ### Craft
 
 Implements with TDD (guardrails). Two modes based on tier.
@@ -274,24 +286,41 @@ Implements with TDD (guardrails). Two modes based on tier.
 - Guardrails cycle: RED -> verify fail -> GREEN -> verify pass -> REFACTOR -> commit.
 - No per-task review loop. Polish at the end covers it.
 
-**Standard/Deep (subagent per task):**
-- Blueprint provides implementation units.
-- For each unit, dispatch fresh opus 4.6 subagent with: blueprint file, unit details, guardrails discipline.
-- Per-task review loop (lighter than full polish):
+**Standard/Deep (dispatch based on task structure):**
+- Blueprint provides implementation units with explicit independence flags.
+- **Dispatch assessment** — check blueprint before dispatching:
+  - Units marked independent, disjoint files, no shared state → parallel subagents (opus 4.6)
+  - Units with sequential dependencies, shared state, or overlapping files → sequential inline execution
+  - Default to sequential. Parallel is the optimization, not the default.
+  - Subagents carry per-dispatch context overhead — prefer inline when units are coupled.
+- **Parallel dispatch (independent units):**
+  - Fresh opus 4.6 subagent per unit with: blueprint file, unit details, guardrails discipline.
+  - One file, one owner — no two subagents touch the same file.
+- **Sequential dispatch (dependent units):**
+  - Inline execution in the main session, unit by unit.
+  - Previous unit's output informs the next — no context loss from subagent boundaries.
+- Per-unit review loop (lighter than full polish):
   - Tests pass for this unit
   - No stubs/placeholders
   - Matches the blueprint's implementation unit goal
   - Quick correctness scan
-- Subagent returns: DONE / BLOCKED / NEEDS_CONTEXT.
-  - DONE -> next unit
-  - BLOCKED -> surface to user
-  - NEEDS_CONTEXT -> provide and retry
+- Unit returns: DONE / BLOCKED / NEEDS_CONTEXT.
+  - DONE → next unit
+  - BLOCKED → surface to user
+  - NEEDS_CONTEXT → provide and retry
 - Incremental commits at unit boundaries.
+- **Progress tracker:** Restate unit checklist at each unit boundary to counter attention drift in long contexts. `[x] Unit 1 done. [x] Unit 2 done. [ ] Unit 3 — current. [ ] Unit 4.`
+- **Context health:** Between units, proactively compact if context is large. Do not wait for autocompact — with 1M context windows, autocompact triggers at ~835K tokens, but degradation starts much earlier. After compaction, restate the plan and unit checklist.
 
 **System-wide test check (from CE, for std/deep):**
 - What fires when this runs? (callbacks, middleware, observers)
 - Do tests exercise the real chain? (not just mocked isolation)
 - Can failure leave orphaned state?
+
+**Gotchas:**
+- Test behavior through public interfaces — tests that assert implementation details break on every refactor
+- Verify the test fails for the right reason — a test that fails for the wrong reason proves nothing
+- Write one test, then one implementation — not all tests then all code
 
 ### Guardrails (TDD) — The Iron Law
 
@@ -315,7 +344,7 @@ COMMIT:   At phase transitions
 - Test behavior through public interfaces, not implementation details
 - Vertical slices: one test -> one implementation (not all tests then all code)
 - Boundary-only mocking: external APIs, DBs, caches, time, filesystem. Real code internally.
-- Never refactor while RED
+- Refactor only when GREEN
 - Code written before test MUST be deleted entirely
 - 80%+ coverage target (not 100%)
 - Tests should survive internal refactors unchanged
@@ -325,6 +354,11 @@ COMMIT:   At phase transitions
 - Question the architecture, not the symptom
 - Discuss with user before attempting more fixes
 - This is NOT a failed hypothesis — this is a wrong architecture
+
+**Per-agent iteration cap:**
+- Separate from the 3-fix breaker — catches runaway agents that hit different errors each time
+- No default number. Projects set their own cap via evolve when retros show runaway sessions.
+- When hit: agent pauses with status report to user, does not silently continue
 
 **12 rationalization red flags:**
 "I'll write test after", "too simple to test", "just manually verify", "obvious test", "need to see implementation first", "get it working then test", "just a refactor", "existing tests cover this", "tests in follow-up", "prototype/POC", "too hard to write", "watch mode shows passing"
@@ -370,6 +404,11 @@ NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
 ```
 Run the command. Read the output. Count failures. THEN claim the result. No "should pass", no "looks correct". Only evidence.
 
+**Gotchas:**
+- Run verification commands and read output — "tests should pass" is not evidence
+- Check wiring — new components that aren't connected to anything pass all tests and do nothing
+- Verify against sketch/blueprint, not just "does it compile"
+
 ### Retro (automatic, end of every BUILD/FIX)
 
 Writes to `.docs/work/<slug>/retro.md`. Lightweight retros are more descriptive about what was done (since there's no sketch.md).
@@ -398,22 +437,26 @@ This makes retros valuable for propose/evolve because they capture real-world re
 - What Went Well / What Went Wrong — same categories
 - Prevention — how to avoid recurrence
 
-**Root cause categories for "What Went Wrong":**
+**Root cause for "What Went Wrong":** Free-text explanation first. Then tag with a category if one fits — categories help `/propose` detect patterns and help agents think more specifically about what kind of thing went wrong.
 
-| # | Category | Meaning |
-|---|---|---|
-| 1 | Poor user description | Ambiguous, incomplete, or misleading request |
-| 2 | Incorrect scope/tier | Router misclassified lightweight/standard/deep |
-| 3 | Poor sketch decisions | Wrong approach chosen, missed constraints |
-| 4 | Stale research/docs | Research or docs contain outdated information |
-| 5 | Poor CLAUDE.md | Project instructions missing or misleading |
-| 6 | Poor code patterns/structure | Codebase structure caused confusion or bugs |
-| 7 | Poor test coverage | Pre-existing gap in tests |
-| 8 | Poor enforcement | Verification didn't catch a problem |
-| 9 | Poor skill behavior | Framework bug → create GitHub issue |
-| 10 | External/environmental | Third-party service, CI, environment issue |
+| Category | Meaning |
+|---|---|
+| Poor user description | Ambiguous, incomplete, or misleading request |
+| Incorrect scope/tier | Router misclassified lightweight/standard/deep |
+| Poor sketch decisions | Wrong approach chosen, missed constraints |
+| Stale research/docs | Research or docs contain outdated information |
+| Poor CLAUDE.md | Project instructions missing or misleading |
+| Poor code patterns/structure | Codebase structure caused confusion or bugs |
+| Poor test coverage | Pre-existing gap in tests |
+| Poor enforcement | Verification didn't catch a problem |
+| Poor skill behavior | Framework bug → create GitHub issue |
+| External/environmental | Third-party service, CI, environment issue |
 
 **MAP.md maintenance:** Retros that touch new modules or paths incrementally update MAP.md.
+
+**Gotchas:**
+- Write specific technical findings, not generic summaries — "auth middleware doesn't validate token expiry" not "there were some issues"
+- Include what went wrong with root cause, not just what went right
 
 ### EXPLORE
 
@@ -423,6 +466,10 @@ Lightweight by nature. Dispatches explorers, synthesizes, done. No retro produce
 2. Synthesize findings into a clear answer
 3. If external research was done, persist to `.docs/research/<topic>.md` (only artifact)
 4. **Transition (optional):** "Let's build it" -> BUILD with research context. "Fix what we found" -> FIX. "Just needed to know" -> done.
+
+**Gotchas:**
+- Cite sources for every finding — distinguish codebase evidence from model knowledge from external research
+- Persist external research to `.docs/research/` — session context dies, files survive
 
 ---
 
@@ -641,14 +688,33 @@ Changes:
 - Persist in-progress work artifacts before context compression
 - Ensures sketch/blueprint drafts survive `/compact`
 
+**PostCompact:**
+- Re-inject critical hard gates after compaction (compaction may summarize away rules, dropping compliance)
+- Minimum re-inject: TEST-THEN-CODE, EVIDENCE-BEFORE-CLAIMS, ARTIFACT-BEFORE-HANDOFF
+- Re-inject project verification suite definition from CLAUDE.md
+
 **Stop:**
 - Persist in-progress work when session ends (same concern as PreCompact, different trigger)
 - User may close terminal mid-work — drafts must survive
 
+### Project-level (verification)
+
+The framework defines the pattern: **verify before claiming done**. The project defines what verification means.
+
+Projects configure PostToolUse hooks for their verification suite — any combination of: tests, linter, formatter, type checker, build, dead code detection (knip), etc. The framework does not prescribe which tools — projects vary.
+
+Document the project's verification suite in CLAUDE.md (see Project CLAUDE.md Requirements).
+
+### Hook Security
+
+- Hooks run with user's system permissions — treat hook inputs as untrusted
+- Quote all shell variables
+- Use absolute script paths or documented project variables
+- Keep failure output concise and actionable — verbose errors waste context
+
 ### Deferred
 
 - PreToolUse guards (protect .docs/ artifacts from accidental overwrites)
-- PostToolUse audits (artifact integrity after writes)
 - SubagentStop (validate agent contract/outputs)
 
 ## Models
@@ -659,6 +725,21 @@ Changes:
 | Explorer agents | Sonnet 4.6 | Fast, cheap, focused search and retrieval |
 | Craft agents | Opus 4.6 | Code quality matters most here |
 | Review agents | Sonnet 4.6 | Focused review, scoped analysis |
+| Bounded checks | Haiku 4.5 | Deterministic, low-ambiguity, clear pass/fail. 3x cheaper than Sonnet. |
+
+Haiku candidates: placeholder/stub scanning, YAML frontmatter validation, lint-style checks, doc updates, MAP.md maintenance in retro (compare git diff paths against MAP.md, add missing entries). Pattern from Compound Engineering (lint agent, coherence-reviewer) and Everything Claude Code (doc-updater): high-volume pass/fail work where judgment is not needed.
+
+## Tool Preference
+
+Prefer the lowest-overhead tool that reliably solves the task.
+
+| Preference | When |
+|---|---|
+| **CLI first** (`gh`, `git`, `rg`, `tree`) | Mature external tools. 10-32x more token-efficient than MCP equivalents. |
+| **MCP when it wins** (e.g., Context7) | Structured, pre-indexed data that CLI would require multiple steps to assemble. Documentation lookup via Context7 is cheaper than web crawling or reading entire repos. |
+| **Web as fallback** | When CLI and MCP cannot provide the data. Multiple tool calls, parsing overhead. |
+
+Principle: measure by total token cost per answer, not by tool type. CLI usually wins, but MCP wins when it returns focused data in one call.
 
 ## Skill & Agent File Budgets
 
@@ -673,6 +754,37 @@ Changes:
 - **Soft ban** (flag + replace): "appropriate", "relevant", "necessary", "proper", "handle accordingly", "standard", "as described above"
 - Principle: if an implementing agent reading the phrase would need to make a judgment call, it's a placeholder
 
+## Agent Voice
+
+All agents inherit a unified voice: competent identity with compressed output. These are independent levers — concise output does not require a dumbed-down identity.
+
+**Persona pattern:** `"[Role]. Expert, direct, no filler. [domain-specific trait]."`
+
+Examples:
+- "Correctness reviewer. Expert, direct, no filler. Skeptical, evidence-only."
+- "Code explorer. Expert, direct, no filler. Grep-first, codebase-only."
+- "Craft agent. Expert, direct, no filler. TDD-disciplined, behavioral focus."
+
+**Output format:**
+
+Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries (sure/certainly/of course/happy to), hedging (might/perhaps/I think/it seems). Fragments OK. Short synonyms (big not extensive, fix not "implement a solution for"). Technical terms exact. Code blocks unchanged. Errors quoted exact.
+
+Pattern: `[thing] [action] [reason]. [next step].`
+
+Not: "Sure! I've identified that the issue is likely caused by a race condition in the authentication middleware."
+Yes: "Race condition in auth middleware. Token expiry check uses `<` not `<=`. Fix:"
+
+**Token budgets (guidelines, not hard caps):**
+
+| Agent output | Budget |
+|---|---|
+| Explorer findings | < 500 tokens |
+| Review findings | < 200 tokens per issue |
+| Craft status | < 100 tokens |
+| Retro sections | < 300 tokens per section |
+
+**Auto-clarity:** Drop compressed voice for security warnings, irreversible action confirmations, and multi-step sequences where fragments risk misread. Resume after.
+
 ## Project CLAUDE.md Requirements
 
 The project's `CLAUDE.md` must include so agents have the right context:
@@ -681,18 +793,19 @@ The project's `CLAUDE.md` must include so agents have the right context:
 2. **Available CLI tools** — what's installed (`tree`, `rtk`, etc.) so agents use the right commands
 3. **Tech stack** — languages, frameworks, test runners per platform
 4. **Conventions** — error handling, naming, patterns specific to this project
+5. **Verification suite** — which checks to run before completion claims (test, lint, typecheck, format, build, knip, etc.) and exact commands for each
 
 ## Hard Gates
 
-Non-negotiable rules enforced across the framework.
+Non-negotiable rules enforced across the framework. Instruction-based compliance is ~60-70%. Gates 3, 5, 7 are re-injected via PostCompact hook to survive compaction. Project-level verification hooks enforce evidence requirements (see Hooks section).
 
-1. **NO-CODE-BEFORE-DESIGN** — No implementation before sketch (std/deep) or router classification (light)
-2. **NO-RECOMMENDATION-BEFORE-OPTIONS** — Present ALL approaches before recommending (anti-anchoring)
+1. **DESIGN-THEN-CODE** — Sketch (std/deep) or router classification (light) before implementation
+2. **OPTIONS-THEN-RECOMMEND** — Present ALL approaches before recommending (anti-anchoring)
 3. **ARTIFACT-BEFORE-HANDOFF** — Persist artifact to disk before transitioning to next phase
 4. **AGENT-DISPATCH-MANDATORY** — Explorers must run before classification (dispatched once router has a directed assumption)
-5. **EVIDENCE-BEFORE-CLAIMS** — No completion claims without fresh verification output
-6. **NO-FIX-WITHOUT-ROOT-CAUSE** — No fixes without investigation first (iron law of debugging)
-7. **NO-CODE-WITHOUT-FAILING-TEST** — Guardrails iron law, all tiers
+5. **EVIDENCE-BEFORE-CLAIMS** — Run verification, read output, then claim result
+6. **INVESTIGATE-THEN-FIX** — Reproduce, hypothesize, confirm root cause, then fix
+7. **TEST-THEN-CODE** — Write failing test first, then implementation (guardrails iron law, all tiers)
 
 ## Rationalization Prevention
 

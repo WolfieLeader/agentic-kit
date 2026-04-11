@@ -1,143 +1,243 @@
-# Gap Analysis: TIPS.md vs FRAMEWORK.md
+# Gap Analysis: TIPS2.md vs FRAMEWORK.md
 
-> Reviewed 2026-04-11. Cross-references TIPS.md research, FRAMEWORK.md design, inspiration sources (Compound Engineering, Superpowers, CC10X, Matt Pocock, Everything-Claude-Code), and grugbrain.dev philosophy.
+> Reviewed 2026-04-11. Based on corrected TIPS2.md (with independent research validation) and FRAMEWORK.md v0.1.
+>
+> Scope: Claude Code, Claude models (Haiku 4.5, Sonnet 4.6, Opus 4.6), English language.
 
 ---
 
 ## What FRAMEWORK.md Gets Right
 
-Core philosophy is sound. Properly incorporates:
+Core philosophy is sound:
 
-- **Disk as handoff** / context engineering (artifacts survive compaction)
-- **Tier-scaled ceremony** (right-size to scope)
-- **Explorers before classification** (informed decisions)
+- **Disk as handoff** — artifacts survive compaction, context rot is sidestepped
+- **Tier-scaled ceremony** — light gets light, the grug way
+- **Explorers before classification** — structural anti-anchoring, not just instructional
 - **TDD as iron law** with 3-fix circuit breaker
-- **Knowledge compounding** (retro → propose → evolve)
+- **Knowledge compounding** — retro → propose → evolve
 - **Evidence-before-claims** verification
 - **Anti-sycophancy** in review feedback
-- **Model routing** (sonnet for read-heavy, opus for code)
+- **Model routing** — Sonnet for read-heavy, Opus for code
 - **Confidence gating** on review findings
+- **Fresh-context review** via separate review agents in polish
 
 ---
 
-## Gaps: TIPS Insights Missing from FRAMEWORK
+## Gaps
 
-### 1. KV-Cache Optimization — Not Operationalized
+### 1. Agent Voice — No Unified Template
 
-TIPS says: append-only context, deterministic serialization, mask tools don't remove them. FRAMEWORK uses disk-based handoff (good) but says nothing about how skill/agent prompts should be structured for cache-friendliness. When a craft agent gets dispatched, the prompt structure matters for cache hits across units.
+Source: TIPS2.md §4 (Output Compression), §16 (Skill And Agent Design).
 
-### 2. Todo-List Driven Development — Absent from Craft
+Output tokens cost 5x input. Every framework agent produces output, none have explicit brevity constraints.
 
-TIPS says: agents average ~50 tool calls, checklists counter lost-in-the-middle. FRAMEWORK's blueprint has implementation units, but craft agents don't maintain a running checklist during execution. The blueprint units *are* the checklist, but no one tells the craft agent to use them that way.
+Three levers, all unset:
 
-### 3. Few-Shot Pattern Hazards — Not Mentioned
+| Lever | What it does | Current state |
+|-------|-------------|---------------|
+| **Persona** | Competent identity → better reasoning distribution | Agents have roles but no trait framing |
+| **Output format** | Structured constraints → compressed output | Explorers have structure, others don't |
+| **Token budget** | Measurable compression | No per-agent budgets |
 
-TIPS warns about mimicry vulnerability and drift in repetitive tasks. Craft agents doing repeated TDD cycles are exactly the scenario where this applies. No guidance on introducing structured variation.
+Recommendation:
 
-### 4. Subagent Cost Awareness — Implicit but Not Explicit
+- Define an agent voice template inherited by every agent: one-line persona + output format + token budget.
+- Explorer findings: <500 tokens. Review findings: <200 tokens per issue. Craft status: <100 tokens.
+- Use role + trait: "Correctness reviewer. Methodical, skeptical, evidence-only."
 
-TIPS: 15-50K token overhead per subagent, 3-10x cost vs inline. FRAMEWORK makes lightweight inline (good), but the dispatch decision for std/deep is based on *complexity*, not cost. A 2-unit standard task might be cheaper inline than spawning 2 subagents.
+Priority: **High**. Affects every agent prompt and has direct cost impact.
 
-### 5. Output Token Cost — Agents Aren't Told to Be Concise
+### 2. Positive Framing for Hard Gates
 
-Output is 5x input cost. FRAMEWORK's agent sections describe what agents *return* but never say "be concise." Explorer findings, review findings, craft status — all should have explicit brevity constraints.
+Source: TIPS2.md §16 (Instruction Framing — positive instructions followed more reliably than negative).
 
-### 6. No Haiku Anywhere
+FRAMEWORK's hard gates are all negative:
 
-TIPS has a clear model routing table. FRAMEWORK only uses Sonnet and Opus. Haiku could handle: placeholder scanning in polish, simple file searches, classification subtasks.
+| Current (negative) | Proposed (positive) |
+|---|---|
+| NO-CODE-BEFORE-DESIGN | DESIGN-THEN-CODE |
+| NO-RECOMMENDATION-BEFORE-OPTIONS | OPTIONS-THEN-RECOMMEND |
+| NO-FIX-WITHOUT-ROOT-CAUSE | INVESTIGATE-THEN-FIX |
+| NO-CODE-WITHOUT-FAILING-TEST | TEST-THEN-CODE |
+| "Never refactor while RED" | "Refactor only when GREEN" |
 
-### 7. Context Rot Checkpoints — Missing from Pipeline
+Priority: **High**. Affects all hard gates and rationalization tables.
 
-TIPS says compact before hitting ~60% of context window. FRAMEWORK has PreCompact hook but no guidance on *when* during a long std/deep pipeline the router should check context health. A multi-unit craft phase can easily burn 200K+ tokens.
+### 3. Per-Phase Gotchas
 
-### 8. CLI > Skills > MCP Hierarchy — Not Encoded
+Source: TIPS2.md §16 — "common gotchas per domain are more actionable than abstract principles."
 
-TIPS says CLI is 4-32x more efficient than MCP. FRAMEWORK doesn't state a tool preference. Agents should prefer `gh` over GitHub MCP, `git` over MCP equivalents, etc.
+Each phase should include 2-3 specific failure modes agents commonly hit:
 
-### 9. Auto-Mode / Max-Turns Safeguards
+- **Router:** "Agents classify everything as lightweight to avoid ceremony"
+- **Sketch:** "Agents anchor on the first approach" (handled by anti-anchoring — good)
+- **Blueprint:** "Agents include implementation code in behavioral descriptions"
+- **Craft:** "Agents write tests that test implementation details, not behavior"
+- **Polish:** "Agents claim tests pass without running them"
+- **Retro:** "Agents write generic retrospectives instead of specific technical findings"
 
-TIPS warns about 5-20x token burn in auto mode. FRAMEWORK's 3-fix circuit breaker is per-error, but there's no overall iteration cap per agent. TIPS mentions MAX_ITERATIONS=8 in multi-agent section. FRAMEWORK's agent design rules are scattered — only craft agents get behavioral rules.
+Priority: **High**. More actionable than abstract principles.
 
----
+### 4. Task Structure in Dispatch Decisions
 
-## Gaps: Concepts Missing from FRAMEWORK
+Source: TIPS2.md §9 (Google Research study, Kim & Liu Jan 2026).
 
-### 10. Agent Voice — Unified Design Decision
+Google Research found task structure matters more than task size for multi-agent decisions:
 
-Gaps #5 (output cost), persona framing, output compression, and instruction framing are really one design decision with three levers. Now covered in TIPS.md Sections 2 ("Output Compression") and 13 ("Agent Persona & Voice", "Instruction Framing").
+- Parallelizable tasks: +80.9% with multi-agent.
+- Sequential tasks: 39-70% degradation with multi-agent.
 
-**The three levers:**
+FRAMEWORK routes to subagents based on tier (complexity). But a "standard" task with 3 tightly coupled, sequentially dependent units may perform worse with subagents than inline execution.
 
-| Lever | What it does | Example |
-|-------|-------------|---------|
-| **Persona** | Sets competent identity → better reasoning distribution | "You are a correctness reviewer. Methodical, skeptical, evidence-only." |
-| **Output format** | Structured constraints → compressed output, 5x cost savings | "Return: findings list, max 200 tokens per issue. No preamble." |
-| **Instruction framing** | Positive + specific → higher compliance | "Design then code" not "don't code before designing" |
+Recommendation:
 
-**What FRAMEWORK.md should add:**
+- Add task structure assessment to craft dispatch: "Are implementation units truly independent?"
+- If units have sequential dependencies (unit B depends on unit A's output), prefer inline or sequential dispatch.
+- Subagents only when units can be worked in parallel without coordination.
 
-1. An **agent voice template** that every agent inherits — one line persona + output format + token budget
-2. **Rewrite hard gates as positive imperatives** — "DESIGN-THEN-CODE" not "NO-CODE-BEFORE-DESIGN"
-3. **Per-agent output budgets** — explorers: <500 tokens findings, reviewers: <200 tokens per issue, craft status: <100 tokens
+Priority: **High**. Directly affects craft dispatch for std/deep.
 
-**Caveman reference:** [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) achieves 65-75% output savings but uses a "dumb" persona that hurts reasoning. The fix: competent persona + structured output constraints = same savings, no IQ penalty.
+### 5. Coding-Specific Multi-Agent Limits
 
-### 11. Positive Framing ("Do X" Over "Don't Do X")
+Source: TIPS2.md §9 (Anthropic — "most coding tasks involve fewer truly parallelizable tasks than research").
 
-Subsumed by #10 (instruction framing lever), but worth keeping as a separate action item since it affects hard gates, rationalization tables, and TDD rules throughout the framework.
+FRAMEWORK's std/deep pipeline assumes implementation units are parallelizable. Many coding tasks have sequential dependencies, shared state, or overlapping files.
 
-FRAMEWORK's current negative framing:
-- "NO-CODE-BEFORE-DESIGN" → "DESIGN-THEN-CODE"
-- "NO-RECOMMENDATION-BEFORE-OPTIONS" → "OPTIONS-THEN-RECOMMEND"
-- "Never refactor while RED" → "Refactor only when GREEN"
-- "NO-FIX-WITHOUT-ROOT-CAUSE" → "INVESTIGATE-THEN-FIX"
-- "NO-CODE-WITHOUT-FAILING-TEST" → "TEST-THEN-CODE"
+Recommendation:
 
-### 12. Common Gotchas / Constraints Per Phase
+- Document when parallel craft dispatch is appropriate (disjoint files, independent modules, no shared state).
+- Default to sequential craft dispatch; parallel is an optimization.
+- Blueprint should flag unit independence explicitly.
 
-Each phase should include 2-3 specific gotchas that agents commonly hit. Examples:
-- Sketch: "Agents tend to anchor on the first approach they generate" (handled by anti-anchoring rule, good)
-- Craft: "Agents write tests that test implementation details, not behavior"
-- Polish: "Agents claim tests pass without running them"
+Priority: **Medium**. Overlaps with gap #4 but worth a separate framework note.
 
-More actionable than abstract principles.
+### 6. No Haiku in Model Routing
+
+Source: TIPS2.md §12 (Model Routing).
+
+FRAMEWORK only uses Sonnet 4.6 and Opus 4.6. Haiku 4.5 is absent.
+
+Haiku candidates:
+
+- Placeholder scanning in polish (hard ban check: TBD, TODO, etc.)
+- Simple file searches in explorers (grep-first narrowing)
+- Classification subtasks in the router
+- YAML frontmatter validation
+
+At $1/$5 vs Sonnet's $3/$15, Haiku is 3x cheaper for deterministic, low-ambiguity work.
+
+Priority: **Medium**. Cost optimization.
+
+### 7. CLI > Skills > MCP Preference
+
+Source: TIPS2.md §7 (Scalekit benchmark — 10-32x CLI advantage, 28% MCP failure rate).
+
+FRAMEWORK doesn't state a tool preference. Agents should prefer `gh` over GitHub MCP, `git` over MCP equivalents, `rg`/`tree` over MCP file tools.
+
+Recommendation:
+
+- State preference in agent prompts: "Use CLI tools when available. Use MCP only when CLI cannot provide the data."
+
+Priority: **Medium**. Token efficiency and reliability.
+
+### 8. Todo-Checklist for Craft Agents
+
+Source: TIPS2.md §2 (Lost In The Middle — Liu et al. showed ~20pp accuracy drop for mid-context info).
+
+Blueprint units serve as a checklist, but craft agents don't maintain a running progress tracker. For multi-unit craft, the current and remaining units should be restated periodically to counter attention drift.
+
+Recommendation:
+
+- Craft agents maintain: "[x] Unit 1, [x] Unit 2, [ ] Unit 3 — currently on Unit 3."
+- Restate at unit boundaries.
+
+Priority: **Medium**. Simple to add, addresses documented attention drift.
+
+### 9. Overall Iteration Cap
+
+Source: TIPS2.md §9 (Multi-Agent Workflows), §17 (Complexity Management).
+
+The 3-fix circuit breaker is per-error. No overall iteration cap per agent exists. A craft agent could make 50+ tool calls without triggering the breaker if each attempt targets a different error.
+
+Recommendation:
+
+- Add a hard iteration cap per agent (e.g., MAX_ITERATIONS=25).
+- Auto-pause at cap with status report to user.
+- Separate from the 3-fix circuit breaker, which remains per-error.
+
+Priority: **Medium**. Safety guard for runaway sessions.
+
+### 10. Context Health Between Craft Units
+
+Source: TIPS2.md §2 (Context Rot — no universal threshold, but degradation is real and progressive).
+
+FRAMEWORK has a PreCompact hook but no guidance on when during a long std/deep pipeline to check context health.
+
+Recommendation:
+
+- Between craft units, assess whether the session is degrading.
+- If context is large, compact and restate the plan before starting the next unit.
+- Not a fixed token threshold — a heuristic check.
+
+Priority: **Low**. Claude Code autocompacts; this is extra safety.
 
 ---
 
 ## The Complexity Critique
 
-Now covered in TIPS.md Section 14 ("Complexity Management"). Core reference: [grugbrain.dev](https://grugbrain.dev/).
+Source: TIPS2.md §17 (Complexity Management), grugbrain.dev.
 
-The framework that exists to fight complexity has itself accumulated complexity. 760 lines, 6 pipeline phases, 10+ agent types, 7 hard gates, 10 root cause categories, 6 YAML schemas.
+The framework has accumulated speculative complexity. 760 lines, 6 pipeline phases, 10+ agent types, 7 hard gates, 10 root cause categories, 6 YAML schemas.
 
-Specific concerns:
+### Blueprint Review Agents for Std Tier
 
-1. **Blueprint review agents for std tier** — is a 3-agent review of a plan *before code even starts* justified for a multi-file feature? Prove the light pipeline works first, let std/deep ceremony emerge when you feel the pain of its absence.
+Three agents reviewing a plan before code starts. No evidence yet that blueprint quality is a bottleneck.
 
-2. **10 root cause categories for retro** — agents will pick the wrong category half the time, and categories overlap (is "poor sketch decisions" vs "poor CLAUDE.md" always clear?). Consider: free-text root cause, let `/propose` find patterns.
+Google Research's study supports review being parallelizable and independent, but the ETH Zurich study shows LLM-generated content can hurt as much as help.
 
-3. **YAML frontmatter schemas** — 6 different schemas with specific required fields. Is `overall_confidence: GREEN` in blueprint frontmatter actually useful for grep-first retrieval, or is it ceremony? Fields useful for retrieval: `module`, `tags`, `type`, `date`. The rest is metadata that lives in the document body anyway.
+Recommendation: Defer. Add when retros show blueprint quality is a problem.
 
-4. **Durable decisions in blueprint** — good concept, but the list (API routes, DB schema, shared types, auth boundaries, service boundaries, cross-platform) is prescriptive. "Decisions that cross implementation units" is the principle. The list is examples at best, false requirements at worst.
+### 10 Root Cause Categories
 
-However — FRAMEWORK.md already embodies grug's most important principle: **tier-scaled ceremony**. Light gets light. The question is whether std/deep have *earned* their ceremony yet, or if it's designed speculatively.
+Agents will misclassify. Categories overlap ("poor sketch decisions" vs "poor CLAUDE.md" vs "poor code patterns/structure"). Rigid categories force wrong buckets.
+
+Recommendation: Replace with free-text root cause. Let `/propose` find patterns from actual retro data.
+
+### YAML Frontmatter
+
+Six schemas with specific required fields. Not all are useful for retrieval.
+
+Useful for grep: `module`, `tags`, `type`, `date`, `tier`, `outcome`.
+Questionable: `overall_confidence`, `source_sketch`, `unit_count`.
+
+Recommendation: Keep retrieval-useful fields. Make others optional.
+
+### Durable Decisions List
+
+"API routes, DB schema, auth boundaries..." reads as a checklist. "Decisions that cross implementation units" is the principle. The list is examples.
+
+Recommendation: Frame as "e.g." not requirements.
 
 ---
 
 ## Recommendations
 
-| Priority | Change |
-|----------|--------|
-| High | Define agent voice template (persona + output format + token budget) — gap #10 |
-| High | Rewrite hard gates as positive imperatives — gap #11 |
-| High | Add per-phase gotchas (2-3 each) — gap #12 |
-| Medium | Add todo-checklist instruction to craft agents |
-| Medium | Encode CLI > Skills > MCP preference |
-| Medium | Add context health checkpoints to pipeline |
-| Medium | Add Haiku to model routing for simple tasks |
-| Low | Simplify YAML frontmatter (keep retrieval-useful fields, drop the rest) |
-| Low | Simplify root cause categories (merge overlapping ones) |
-| Defer | KV-cache prompt structure (learn empirically during build) |
-| Defer | Few-shot variation patterns (learn from practice) |
+| Priority | Change | Gap |
+|----------|--------|-----|
+| High | Define agent voice template (persona + output format + token budget) | #1 |
+| High | Rewrite hard gates as positive imperatives | #2 |
+| High | Add per-phase gotchas (2-3 each) | #3 |
+| High | Add task structure assessment to craft dispatch | #4 |
+| Medium | Document coding-specific multi-agent limits | #5 |
+| Medium | Add Haiku to model routing for bounded tasks | #6 |
+| Medium | Encode CLI > Skills > MCP preference | #7 |
+| Medium | Add todo-checklist to craft agents | #8 |
+| Medium | Add overall iteration cap per agent | #9 |
+| Low | Context health checkpoints between craft units | #10 |
+| Low | Simplify YAML frontmatter (keep retrieval-useful fields) | Complexity |
+| Low | Replace root cause categories with free-text | Complexity |
+| Defer | Blueprint review agents (validate need from retros) | Complexity |
+| Defer | KV-cache prompt structure (learn empirically) | — |
+| Defer | Few-shot variation patterns (learn from practice) | — |
 
-**Build order principle:** Build light first, validate, then add std/deep ceremony. This is both the grug way and the framework's own principle of right-sizing.
+**Build order principle:** Build light first, validate with real tasks, add ceremony where retros show pain.

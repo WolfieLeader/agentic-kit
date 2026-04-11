@@ -102,7 +102,7 @@ Dispatched during blueprint review gate for std/deep tiers. Validate the bluepri
 **Blueprint review rules:**
 - Same confidence gating as code review (suppress below 0.60, P0 at 0.50+)
 - Findings feed back into blueprint revision (max 3 retries before escalating to user)
-- Stack-agnostic: projects can add domain-specific blueprint reviewers (security-lens, product-lens, etc.)
+- Stack-agnostic: projects add domain-specific blueprint reviewers via `.docs/config.md` (see Phase Extensions)
 
 ### Code Review Agents (sonnet 4.6)
 
@@ -129,7 +129,7 @@ Dispatched during polish for std/deep tiers only. Read-only, return structured f
 - Confidence-gated: suppress findings below 0.60. P0 findings at 0.50+ survive.
 - Severity scale: P0 (critical) -> P1 (high) -> P2 (moderate) -> P3 (low)
 - Zero-finding halt: if nothing found, say so and stop. No inventing issues.
-- Stack-agnostic: no language-specific reviewers in the framework. Projects add their own (CE has 53 agents including language-specific reviewers like Rails, Python, TypeScript — those are project-level, not framework-level).
+- Stack-agnostic: no language-specific reviewers in the framework. Projects add their own via `.docs/config.md` (see Phase Extensions).
 
 ### Craft Agents (opus 4.6)
 
@@ -535,6 +535,7 @@ Executes accepted proposals after team review.
   evolve/
     <NNN>-proposals.md     # aggregated retro analysis
     <NNN>-evolve.md        # executed changes log
+  config.md                # project-level phase extensions (which agents plug into which phases)
   MAP.md                   # project navigation index
   CHANGELOG.md             # append-only log of evolve changes
   FRAMEWORK.md             # this document
@@ -562,6 +563,28 @@ Platform pattern: apps/<platform>/src/...
 - packages/
   - shared — Shared types and utilities
 ```
+
+## Phase Extensions
+
+Projects declare additional agents for framework phases in `.docs/config.md`. Agents themselves live in `.claude/agents/` (standard location). The framework loads extensions at phase entry.
+
+```markdown
+# .docs/config.md
+
+## Polish — Additional Reviewers
+- security-reviewer (always-on)
+- rails-reviewer (always-on)
+- hipaa-reviewer (conditional: patient data models touched)
+
+## Blueprint — Additional Reviewers
+- product-lens (always-on)
+```
+
+Rules:
+- `always-on` — runs every time the phase executes
+- `conditional` — include trigger description; framework checks before dispatching
+- Agent files in `.claude/agents/` follow the same format as framework agents (role, inputs, output format, file budget)
+- Extensions use the same confidence gating and severity scale as framework agents
 
 ## YAML Frontmatter Schemas
 
@@ -846,7 +869,7 @@ Decisions made during framework design, preserved for context.
 10. **Scope upgrade/downgrade** — agent proposes with reasoning, user confirms. Upgrading: current session context becomes starting point for sketch, no restart. Downgrading: drop extra ceremony, keep what's captured.
 11. **Non-software tasks** — naturally supported. BUILD covers docs/design, EXPLORE covers research. Different verification criteria (no tests, but polish still applies).
 12. **Visual communication** — deferred. Project-specific (Figma, ASCII, etc). Framework accommodates visuals as context, doesn't prescribe format.
-13. **Hook implementation** — v1: SessionStart + PreCompact + Stop. Exact scripts are implementation details, resolved when building hooks (build order item 11).
+13. **Hook implementation** — v1: SessionStart + PreCompact + PostCompact + Stop. Project-level verification hooks configured per project. Exact scripts are implementation details, resolved when building hooks (build order item 11).
 
 ## Open Questions
 
@@ -855,7 +878,11 @@ Items to revisit as skills are built.
 1. **Sketch section ordering** — does BUILD mode benefit from a specific question sequence, or is the checkpoint pattern sufficient to cover sections in any order?
 2. **Conditional reviewer triggers** — how does the framework detect what was touched? File-path patterns, content analysis, or explicit tagging in the blueprint?
 3. **Propose minimum retro count** — is 3 retros the right threshold, or should it adapt to project velocity?
-4. **Hook scripts** — exact shell scripts for SessionStart, PreCompact, Stop. Build when implementing hooks.
+4. **Hook scripts** — exact shell scripts for SessionStart, PreCompact, PostCompact, Stop. Build when implementing hooks.
+5. **MAP.md usefulness** — ETH Zurich found LLM-generated navigation files don't help agents find files faster. Validate empirically from retros — if agents ignore MAP.md, simplify or remove.
+6. **Blueprint review agents** — three agents reviewing a plan before code starts. No evidence yet that blueprint quality is a bottleneck. Add when retros show need.
+7. **KV-cache prompt structure** — learn empirically how to structure prompts for cache hit rates.
+8. **Few-shot variation patterns** — learn from practice which tasks benefit from examples in prompts.
 
 ## Build Order
 

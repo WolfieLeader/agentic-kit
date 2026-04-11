@@ -26,8 +26,8 @@ User input
   -> Router: informed questioning + classify type + tier
   -> Dispatch to pipeline:
 
-light BUILD/FIX:     (trace if FIX) -> craft -> polish -> retro
-std/deep BUILD/FIX:  (trace if FIX) -> sketch -> blueprint -> craft -> polish -> retro
+light BUILD/FIX:     (trace if FIX) -> craft -> verify -> retro
+std/deep BUILD/FIX:  (trace if FIX) -> sketch -> blueprint -> craft -> verify -> retro
 EXPLORE:             synthesize explorer findings -> persist research if external
 
 Post-cycle (manual):
@@ -44,6 +44,7 @@ Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
 | Skill | Purpose |
 |---|---|
 | `/agentic` | Universal entry point. Routes to BUILD, FIX, or EXPLORE. |
+| `/extend` | Add agents/skills to framework phases. Inspects fit, suggests modifications, updates `.docs/extend/`. |
 | `/propose` | Aggregate retros, identify patterns, draft change proposals. |
 | `/evolve` | Execute accepted proposals, log to CHANGELOG.md. |
 
@@ -55,7 +56,7 @@ Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
 | `sketch` | Capture what/why via modified grill-me. Two modes: BUILD and FIX. |
 | `blueprint` | Define how. Implementation units, durable decisions, test scenarios. |
 | `craft` | Implement with TDD (guardrails). Inline (light) or subagent-per-task (std/deep). |
-| `polish` | Single step, scales by tier. Evidence-based verification + conditional multi-persona review. |
+| `verify` | Single step, scales by tier. Evidence-based verification + conditional multi-persona review. |
 | `retro` | Per-task reflection. Automatic at end of every BUILD/FIX. Living document during session. |
 
 ## Agents
@@ -102,11 +103,11 @@ Dispatched during blueprint review gate for std/deep tiers. Validate the bluepri
 **Blueprint review rules:**
 - Same confidence gating as code review (suppress below 0.60, P0 at 0.50+)
 - Findings feed back into blueprint revision (max 3 retries before escalating to user)
-- Stack-agnostic: projects add domain-specific blueprint reviewers via `.docs/config.md` (see Phase Extensions)
+- Stack-agnostic: projects add domain-specific reviewers via `/extend` (see Phase Extensions)
 
 ### Code Review Agents (sonnet 4.6)
 
-Dispatched during polish for std/deep tiers only. Read-only, return structured findings.
+Dispatched during verify for std/deep tiers only. Read-only, return structured findings.
 
 **Always-on:**
 
@@ -129,7 +130,7 @@ Dispatched during polish for std/deep tiers only. Read-only, return structured f
 - Confidence-gated: suppress findings below 0.60. P0 findings at 0.50+ survive.
 - Severity scale: P0 (critical) -> P1 (high) -> P2 (moderate) -> P3 (low)
 - Zero-finding halt: if nothing found, say so and stop. No inventing issues.
-- Stack-agnostic: no language-specific reviewers in the framework. Projects add their own via `.docs/config.md` (see Phase Extensions).
+- Stack-agnostic: no language-specific reviewers in the framework. Projects add their own via `/extend` (see Phase Extensions).
 
 ### Craft Agents (opus 4.6)
 
@@ -284,7 +285,7 @@ Implements with TDD (guardrails). Two modes based on tier.
 - No subagent. Main session implements directly.
 - Works from router context (explorer findings + user input).
 - Guardrails cycle: RED -> verify fail -> GREEN -> verify pass -> REFACTOR -> commit.
-- No per-task review loop. Polish at the end covers it.
+- No per-task review loop. Verify at the end covers it.
 
 **Standard/Deep (dispatch based on task structure):**
 - Blueprint provides implementation units with explicit independence flags.
@@ -299,7 +300,7 @@ Implements with TDD (guardrails). Two modes based on tier.
 - **Sequential dispatch (dependent units):**
   - Inline execution in the main session, unit by unit.
   - Previous unit's output informs the next — no context loss from subagent boundaries.
-- Per-unit review loop (lighter than full polish):
+- Per-unit review loop (lighter than full verify):
   - Tests pass for this unit
   - No stubs/placeholders
   - Matches the blueprint's implementation unit goal
@@ -363,7 +364,7 @@ COMMIT:   At phase transitions
 **12 rationalization red flags:**
 "I'll write test after", "too simple to test", "just manually verify", "obvious test", "need to see implementation first", "get it working then test", "just a refactor", "existing tests cover this", "tests in follow-up", "prototype/POC", "too hard to write", "watch mode shows passing"
 
-### Polish
+### Verify
 
 Single step, scales by tier.
 
@@ -415,7 +416,7 @@ Writes to `.docs/work/<slug>/retro.md`. Lightweight retros are more descriptive 
 
 **Retro is a living document during its session:**
 1. Agent writes initial retro from session context (git diff, test results, what happened)
-2. User tests the feature/fix (may happen during polish or after)
+2. User tests the feature/fix (may happen during verify or after)
 3. User provides feedback — failures, style issues, things the agent missed
 4. Agent resolves the issues found
 5. Retro gets updated with the full picture — including what the user found and how it was resolved
@@ -535,7 +536,11 @@ Executes accepted proposals after team review.
   evolve/
     <NNN>-proposals.md     # aggregated retro analysis
     <NNN>-evolve.md        # executed changes log
-  config.md                # project-level phase extensions (which agents plug into which phases)
+  extend/
+    router.md            # additional explorers
+    trace.md             # investigation specialists
+    craft.md             # between-unit checks
+    verify.md            # additional review agents
   MAP.md                   # project navigation index
   CHANGELOG.md             # append-only log of evolve changes
   FRAMEWORK.md             # this document
@@ -566,25 +571,67 @@ Platform pattern: apps/<platform>/src/...
 
 ## Phase Extensions
 
-Projects declare additional agents for framework phases in `.docs/config.md`. Agents themselves live in `.claude/agents/` (standard location). The framework loads extensions at phase entry.
+Projects add agents/skills to framework phases via `/extend`. Each extendable phase has its own file in `.docs/extend/`, loaded by the phase skill at entry. Non-extendable phases (sketch, blueprint, retro, explore) are single-agent or conversational — no dispatch point for extensions.
 
-```markdown
-# .docs/config.md
+**Agent sources:**
+- **Project** — `.claude/agents/`, project-specific, committed to repo
+- **User** — `~/.claude/agents/`, personal, cross-project (e.g., code-simplifier)
 
-## Polish — Additional Reviewers
-- security-reviewer (always-on)
-- rails-reviewer (always-on)
-- hipaa-reviewer (conditional: patient data models touched)
+### Extendable Phases
 
-## Blueprint — Additional Reviewers
-- product-lens (always-on)
+**Router** (`.docs/extend/router.md`) — additional explorers dispatched in parallel alongside code-explorer and docs-explorer. Extensions gather domain-specific context before classification. Explorers return structured findings (Key Findings, Relevant Files, Open Questions) consumed by the router for classification.
+
+Example: `compliance-explorer` checks regulatory docs, `design-system-explorer` checks Figma/design tokens, `infrastructure-explorer` checks Terraform/cloud config.
+
+**Trace** (`.docs/extend/trace.md`) — investigation specialists dispatched to help diagnose the issue. Extensions provide domain-specific lenses on the problem. Findings inform the hypothesis and severity assessment.
+
+Example: `design-reviewer` assesses if the issue is a design flaw vs implementation bug, `performance-profiler` analyzes performance regressions, `security-assessor` evaluates security implications.
+
+**Craft** (`.docs/extend/craft.md`) — between-unit checks that run after each unit's mini-review loop completes. Extensions catch issues early before they compound across units. Must be fast — they run between every unit.
+
+Example: `lint-enforcer` runs project linter, `style-checker` enforces code patterns, `doc-generator` generates docs alongside code.
+
+**Verify** (`.docs/extend/verify.md`) — additional review agents dispatched alongside framework reviewers (correctness, testing, maintainability). Extensions provide project-specific or domain-specific code review. Most natural and common extension point.
+
+Example: `security-reviewer` for auth-heavy projects, `rails-reviewer` for Rails conventions, `hipaa-reviewer` for healthcare compliance, `code-simplifier` for code quality.
+
+### Per-phase file format
+
+```yaml
+---
+phase: verify
+date_updated: 2026-04-11
+---
+
+agents:
+  - name: security-reviewer
+    source: project
+    trigger: always-on
+  - name: hipaa-reviewer
+    source: project
+    trigger: conditional
+    condition: patient data models touched
+  - name: code-simplifier
+    source: user
+    trigger: always-on
 ```
 
-Rules:
+**Rules:**
 - `always-on` — runs every time the phase executes
 - `conditional` — include trigger description; framework checks before dispatching
-- Agent files in `.claude/agents/` follow the same format as framework agents (role, inputs, output format, file budget)
+- Agent files follow the same format as framework agents (role, inputs, output format, file budget)
 - Extensions use the same confidence gating and severity scale as framework agents
+
+### /extend
+
+Invokable skill for managing phase extensions.
+
+1. Accept agent/skill name and target phase
+2. Reject non-extendable phases (sketch, blueprint, retro, explore) with explanation
+3. Locate agent file (`.claude/agents/` or `~/.claude/agents/`)
+4. Assess fit — does the agent's role and output format match the phase's expectations?
+5. Suggest modifications if the agent needs adaptation (e.g., missing confidence scoring for verify, missing structured output for router explorers)
+6. Create or update `.docs/extend/<phase>.md` with entry
 
 ## YAML Frontmatter Schemas
 
@@ -838,7 +885,7 @@ Non-negotiable rules enforced across the framework. Instruction-based compliance
 | "I'll write the test after" | Tests-after prove nothing. Tests-first discover edge cases. |
 | "Let me skip the sketch, I know what to do" | Sketch captures shared understanding, not just your understanding |
 | "The explorers won't find anything" | They inform routing. Run them. |
-| "Polish is overkill for this" | Polish scales by tier. Lightweight polish IS lightweight. |
+| "Verify is overkill for this" | Verify scales by tier. Lightweight verify IS lightweight. |
 | "I'm confident it works" | Confidence != evidence. Run the verification. |
 | "Just one more fix attempt" | 3 failed fixes = wrong architecture. Stop. |
 
@@ -867,7 +914,7 @@ Decisions made during framework design, preserved for context.
 8. **EXPLORE artifacts** — produces research only (`.docs/research/<topic>.md`), no retro.
 9. **Cross-platform** — deferred to project-level. Handled by MAP.md modules, durable decisions in blueprints, project CLAUDE.md.
 10. **Scope upgrade/downgrade** — agent proposes with reasoning, user confirms. Upgrading: current session context becomes starting point for sketch, no restart. Downgrading: drop extra ceremony, keep what's captured.
-11. **Non-software tasks** — naturally supported. BUILD covers docs/design, EXPLORE covers research. Different verification criteria (no tests, but polish still applies).
+11. **Non-software tasks** — naturally supported. BUILD covers docs/design, EXPLORE covers research. Different verification criteria (no tests, but verify still applies).
 12. **Visual communication** — deferred. Project-specific (Figma, ASCII, etc). Framework accommodates visuals as context, doesn't prescribe format.
 13. **Hook implementation** — v1: SessionStart + PreCompact + PostCompact + Stop. Project-level verification hooks configured per project. Exact scripts are implementation details, resolved when building hooks (build order item 11).
 
@@ -892,11 +939,12 @@ Recommended sequence for implementing this framework as skills:
 2. `sketch` — internal skill, BUILD and FIX modes, checkpoint summary pattern
 3. `blueprint` — internal skill, implementation units, durable decisions, review gate
 4. `craft` — internal skill, TDD (guardrails) discipline, inline and subagent modes
-5. `polish` — internal skill, tier-scaled, multi-persona for std/deep
+5. `verify` — internal skill, tier-scaled, multi-persona for std/deep
 6. `trace` — internal skill, FIX gate
 7. `retro` — internal skill, automatic, two formats (BUILD/FIX), living document
-8. `/propose` — user-invokable, retro aggregation and pattern detection
-9. `/evolve` — user-invokable, execute accepted proposals
-10. Agents — code-explorer, docs-explorer, blueprint reviewers, code reviewers
-11. Hooks — SessionStart, PreCompact, Stop
-12. CLAUDE.md — project instructions that make the framework discoverable
+8. `/extend` — user-invokable, manage phase extensions in `.docs/extend/`
+9. `/propose` — user-invokable, retro aggregation and pattern detection
+10. `/evolve` — user-invokable, execute accepted proposals
+11. Agents — code-explorer, docs-explorer, blueprint reviewers, code reviewers
+12. Hooks — SessionStart, PreCompact, PostCompact, Stop
+13. CLAUDE.md — project instructions that make the framework discoverable

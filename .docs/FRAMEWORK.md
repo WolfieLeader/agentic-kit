@@ -20,7 +20,7 @@ A meta-framework for AI-assisted software development. One entry point, three wo
 
 ```
 User input
-  -> /agentic router self-look (MAP.md, CLAUDE.md, grep .docs/ frontmatter, scan likely files)
+  -> /start router self-look (MAP.md, CLAUDE.md, grep .docs/ frontmatter, scan likely files)
   -> Classify type + provisional tier from user input + self-look
   -> Dynamic questioning scaled to clarity level
   -> Lightweight: no explorer dispatch
@@ -46,7 +46,7 @@ Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
 
 | Skill | Purpose |
 |---|---|
-| `/agentic` | Universal entry point. Routes to BUILD, FIX, or EXPLORE. |
+| `/start` | Universal entry point. Routes to BUILD, FIX, or EXPLORE. |
 | `/extend` | Add agents/skills to framework phases. Inspects fit, suggests modifications, updates `.docs/extend/`. |
 | `/propose` | Aggregate retros, identify patterns, draft change proposals. |
 | `/evolve` | Execute accepted proposals, log to CHANGELOG.md. |
@@ -162,7 +162,7 @@ Determined after explorer findings are available.
 
 ## Phase Details
 
-### /agentic (Router)
+### /start (Router)
 
 ```
 Receives: user input
@@ -802,7 +802,7 @@ source_proposals: 003
 changes_made:
   - target: skill-change
     description: Added cross-platform impact question to sketch
-    files: [skills/agentic/references/sketch-template.md]
+    files: [skills/start/references/sketch-template.md]
   - target: claude-md-change
     description: Added API error handling convention
     files: [CLAUDE.md]
@@ -1023,7 +1023,7 @@ Recommended sequence for implementing this framework as skills:
 1. Directory structure + YAML schemas + MAP.md template
 2. `retro` — capture learnings from day one while building the rest
 3. `craft` + `verify` (lightweight only) — the core build loop
-4. `/agentic` (router, lightweight only) — self-look, classification, no explorer dispatch
+4. `/start` (router, lightweight only) — self-look, classification, no explorer dispatch
 5. `sketch` + `blueprint` — std/deep ceremony
 6. `trace` — FIX gate (must exist before craft handles FIX flows)
 7. Upgrade router to dispatch explorers for std/deep

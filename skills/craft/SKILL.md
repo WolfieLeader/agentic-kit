@@ -1,0 +1,133 @@
+---
+name: craft
+description: >
+  Implements with TDD. Two modes: lightweight (inline, no subagent) and
+  std/deep (fresh opus subagent per unit, sequential). Produces code + tests.
+phase: craft
+type: internal
+---
+
+## Context
+
+Receives:
+- Lightweight: dispatch summary from start
+- Std/deep: blueprint.md path + explorer findings
+
+Reads:
+- `.docs/work/<slug>/blueprint.md` (std/deep)
+- `.docs/extend/craft.md` for extension agents/hooks
+- Source code, test files, project conventions
+
+## Procedure -- Lightweight
+
+No subagent. Main session implements directly. No extensions.
+
+1. **Identify change** -- read relevant source, identify what changes and where.
+2. **Identify test** -- determine which test proves the change works. Process blueprint test scenarios one-at-a-time. Never generate multiple tests before implementing the first. Batch test generation validates the agent's imagination, not the code.
+3. **RED** -- write one failing test. Run it. Confirm it fails for the RIGHT reason (missing behavior, not syntax/import error).
+4. **GREEN** -- write minimum code to pass. Run full suite. Confirm green, no regressions.
+5. **REFACTOR** -- clean up if needed. Run tests. Confirm still green.
+6. **Exception protocol** -- if genuinely non-testable (CSS, config, migration): state why, specify alt verification, proceed. NEVER for logic/API/data/behavior.
+7. Pass to verify.
+
+## Procedure -- Standard/Deep
+
+Fresh opus subagent per implementation unit, dispatched sequentially per dependency order.
+
+### 1. Read blueprint
+
+Read blueprint.md. Extract unit list with execution order, durable decisions, per-unit details.
+
+### 2. Dispatch per unit
+
+For each unit in execution order:
+
+**A. Construct context bundle:**
+- Unit goal, approach, test scenarios, verification criteria
+- Relevant durable decisions (only those this unit needs)
+- Relevant explorer findings for affected systems
+- Project conventions (test framework, file structure, naming)
+
+**B. Dispatch fresh opus subagent:**
+- Subagent gets context bundle only. No full blueprint (context isolation).
+- Subagent follows TDD cycle (same as lightweight steps 2-6).
+- Process test scenarios one-at-a-time. Never batch-generate tests.
+- Model: opus default. Sonnet ONLY for trivially mechanical units (rename, color change, single-line config).
+
+**C. Handle return:**
+
+| Status | Action |
+|---|---|
+| DONE | Mark unit complete, proceed to next |
+| BLOCKED | Re-dispatch with more context / break down further / escalate to user |
+| NEEDS_CONTEXT | Provide requested context, re-dispatch |
+
+**D. Run extensions** (if `.docs/extend/craft.md` exists):
+- Agent extensions first (lint, style, patterns)
+- Skill extensions second (domain workflows on clean code)
+
+**E. Mini-review (inline by orchestrator):**
+- Tests pass (run and read output)
+- No stubs or placeholder code
+- Implementation matches blueprint unit spec
+- Quick diff scan for obvious issues
+
+**F. Integration check (unit 2+):** Run full test suite to catch cases where a unit breaks prior work before more units build on broken foundation.
+
+**G. Progress tracker:**
+```
+[x] Unit 1: <name> -- DONE
+[x] Unit 2: <name> -- DONE
+[ ] Unit 3: <name> -- IN PROGRESS
+[ ] Unit 4: <name> -- PENDING
+```
+
+### 3. Pass to verify
+
+After all units complete, pass to verify with full diff. No automatic commits.
+
+## Circuit Breaker (all tiers)
+
+A "fix attempt" = code change + verification failure. Investigation alone does not count.
+
+**4 consecutive fix failures on the same issue -> STOP.**
+
+1. Stop making changes
+2. State what was tried and why each attempt failed
+3. Question the approach (blueprint wrong? test wrong? assumption wrong?)
+4. Discuss with user before continuing
+
+Reset: breaker resets when moving to a different issue/unit.
+
+## Rationalization Red Flags
+
+If you catch yourself thinking any of these, STOP and follow the TDD cycle:
+
+1. "I'll write the test after"
+2. "Too simple to test"
+3. "Just manually verify"
+4. "The test is obvious"
+5. "Need to see implementation first"
+6. "Get it working then add tests"
+7. "Just a refactor"
+8. "Existing tests cover this"
+9. "Tests in a follow-up"
+10. "It's just a prototype/POC"
+11. "Too hard to write a test for"
+12. "Watch mode shows it's passing"
+
+## Output
+
+Produces: code changes + tests
+Passes to: verify
+
+## References
+
+- references/tdd-guardrails.md -- iron law, RED-GREEN-REFACTOR cycle, exception protocol, circuit breaker, red flags
+
+## Gotchas
+
+- Context isolation: subagents do NOT see the full blueprint. They get their unit only.
+- Durable decisions are authoritative constraints, not suggestions.
+- Exception protocol is for genuinely non-testable changes. Logic is always testable.
+- Extensions in `.docs/extend/craft.md` are optional. Skip gracefully if file missing.

@@ -43,6 +43,8 @@ Post-cycle (manual):
 
 Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
 
+**4-handoff boundary (design constraint):** Research on multi-agent systems (NeurIPS 2025, Google Research Jan 2026) shows problems requiring more than four handoffs almost always degrade in production — compounding per-step failure rates. The std/deep pipeline has 6 phases but only 4 disk-based artifact handoffs: sketch.md → blueprint.md → craft output → retro.md. Explorer findings stay in-context (no disk handoff). Retro is post-hoc reflection (low failure cost). This boundary is intentional — do not add more phases without evidence that the addition improves first-pass success enough to offset the compounding risk.
+
 ### Phase Invocation
 
 The parent session (router/orchestrator) is the pipeline engine. Skills do not invoke each other. The orchestrator loads each phase's SKILL.md, follows it, writes artifacts to disk, then loads the next phase's SKILL.md. This means:
@@ -107,6 +109,7 @@ Dispatched by the router for std/deep tiers only (lightweight skips explorers). 
 - Scope: codebase only, excludes `.docs/`
 - Budget: max 15 files per investigation
 - Search procedure: grep-first narrowing, not broad reads
+- Attributes findings to source (file:line codebase evidence vs model knowledge) — hallucinated findings in explorers poison the entire downstream pipeline
 
 **docs-explorer:**
 - Searches `.docs/` via YAML frontmatter grep (`module:`, `tags:`, `type:`)
@@ -341,7 +344,7 @@ Per unit:
 - Confidence (GREEN / YELLOW / RED)
 - Affected systems
 - Approach (behavioral description, NOT code)
-- Test scenarios (happy path, edge cases, error paths)
+- Test scenarios (ordered priority list — happy path first, then edge cases, then error paths. Craft processes these one at a time in RED-GREEN-REFACTOR cycles, not as a batch.)
 - Verification criteria
 
 **Durable decisions:** top-level section for decisions that cross implementation units (e.g., API routes, database schema, shared types, auth boundaries, service boundaries, cross-platform impacts).
@@ -352,7 +355,7 @@ Per unit:
 3. No placeholders (inline) — hard ban on TBD, TODO, etc.
 4. Testability (inline) — every unit has test scenarios
 
-Max 3 review retries before escalating to user. Downgrade to lightweight possible here if blueprint reveals simpler scope than expected — user confirms.
+Max 3 review retries before escalating to user. On escalation, offer: (a) fix with user guidance, (b) restart from sketch with blueprint reviewer findings as additional input — prevents building on a weak foundation. Downgrade to lightweight possible here if blueprint reveals simpler scope than expected — user confirms.
 
 **What blueprints do NOT contain:** implementation code, exact shell commands, file-level diffs. Blueprints describe what to build, not how to type it. Trust the crafting agent.
 
@@ -401,6 +404,7 @@ Passes:   → verify
   2. Agent extensions from `.docs/extend/craft.md` — fast checks (lint, style, patterns)
   3. Skill extensions from `.docs/extend/craft.md` — domain workflows (frontend-design, data-migration). Agents run first so skills work on clean code.
   4. Mini-review (inline, by orchestrator): tests pass, no stubs/placeholders, matches blueprint goal, quick correctness scan
+  5. Integration check (inline, after unit 2+): run full test suite, not just unit tests — catches cases where a unit breaks a prior unit's work before more units build on the broken foundation
 - Unit status handling:
   - DONE → next unit
   - BLOCKED → assess: context problem → re-dispatch with more context. Too large → break down, re-dispatch. Genuine blocker → escalate to user.
@@ -445,7 +449,7 @@ The project's CLAUDE.md defines what verification tools are available. The iron 
 
 **Principles:**
 - Test behavior through public interfaces, not implementation details
-- Vertical slices: one test -> one implementation (not all tests then all code)
+- Vertical slices: one test -> one implementation (not all tests then all code). Blueprint test scenarios are an ordered priority list — craft processes them one at a time, never generating multiple tests before implementing the first. Batch test generation validates the agent's imagination, not the code that actually runs.
 - Boundary-only mocking: external APIs, DBs, caches, time, filesystem. Real code internally.
 - Refactor only when GREEN
 - Code written before test MUST be deleted entirely
@@ -632,7 +636,9 @@ Aggregates retros, identifies patterns, drafts change proposals.
 | `research-update` | "React docs are stale, need refresh" |
 | `process-change` | "Lightweight FIX still needs sketch for auth-related bugs" |
 
-5. **Write** to `.docs/evolve/NNN-proposals.md`
+5. **Lint research** — scan `.docs/research/` for stale docs (>90 days), orphaned docs (no retro/sketch references), and contradictions between overlapping topics
+6. **Detect token patterns** — grep retro `token_effort:` values. Flag lightweight tasks consistently rated `high` (routing problem), modules with disproportionate `high` ratings (complexity signal)
+7. **Write** to `.docs/evolve/NNN-proposals.md`
 
 **Per-proposal format inside the file:**
 
@@ -724,7 +730,7 @@ Projects add extensions to framework phases via `/extend`. Each extendable phase
 |---|---|---|---|
 | Router | 2 (code + docs explorer) | 2 | Parallel explorers, bounded cost per dispatch |
 | Trace | 0 | 2 | Investigation is focused, few projects need extras |
-| Craft | 0 | 2 | Runs per-unit — cost multiplies with blueprint size |
+| Craft | 0 | 2 agents + 2 skills | Runs per-unit — cost multiplies with blueprint size |
 | Verify | 1 (unified code-reviewer) | 3 | Most common extension point, but 4 total is substantial |
 
 ### Extendable Phases
@@ -745,6 +751,8 @@ Example skills: `frontend-design` applies design system conventions and visual q
 **Verify** (`.docs/extend/verify.md`) — additional review agents dispatched alongside the unified code-reviewer. Extensions provide project-specific or domain-specific code review. Most natural and common extension point.
 
 Example: `security-reviewer` for auth-heavy projects, `rails-reviewer` for Rails conventions, `hipaa-reviewer` for healthcare compliance, `code-simplifier` for code quality.
+
+**Recommended verify extension for UI work:** Agentic manual testing — agent exercises its own code through browser automation (Playwright MCP or similar) to catch issues that unit tests miss. Automated tests verify code correctness; manual testing verifies feature correctness. Add via `/extend` as a verify agent, not a framework-level requirement.
 
 ### Per-phase file format
 
@@ -840,7 +848,9 @@ type: build           # build | fix
 tier: lightweight     # lightweight | standard | deep
 outcome: success      # success | partial | failed
 module: notifications
+affected_modules: [notifications, queue]  # all modules touched (omit if single-module)
 tags: [email, queue, workers]
+token_effort: medium  # high | medium | low — agent self-assessment of token burn vs scope
 # FIX only:
 severity: high        # critical | high | medium | low
 root_cause: poor-test-coverage  # enumerated category
@@ -930,11 +940,17 @@ Document the project's verification suite in CLAUDE.md (see Project CLAUDE.md Re
 - Use absolute script paths or documented project variables
 - Keep failure output concise and actionable — verbose errors waste context
 
-### Deferred
+### v1.1 Hook Roadmap
 
-- PostCompact (re-inject hard gates as defense-in-depth — revisit if retros surface "agent forgot hard gate after compaction")
-- PreToolUse guards (protect .docs/ artifacts from accidental overwrites)
-- SubagentStop (validate agent contract/outputs)
+Planned additions with activation criteria — each graduates from deferred when retros provide evidence of need:
+
+| Hook | Purpose | Activation trigger |
+|---|---|---|
+| PostCompact | Re-inject hard gates as defense-in-depth | Retros surface "agent forgot hard gate after compaction" in 2+ sessions |
+| PreToolUse (.docs/ guard) | Protect .docs/ artifacts from accidental overwrites | Retro surfaces "agent overwrote sketch/blueprint/retro during craft" |
+| SubagentStop | Validate agent contract/outputs (structured return format, file budget) | Retros surface "subagent returned malformed output" or "subagent exceeded file budget" in 2+ sessions |
+
+v1 risk acknowledgment: hard gates depend on CLAUDE.md re-read and skill re-loading, which are structural mechanisms but still instruction-dependent (~60-70% compliance per community observation). This is an accepted v1 tradeoff — hooks graduate to deterministic enforcement when retros demonstrate the need.
 
 ## Models
 
@@ -1065,7 +1081,7 @@ Code explorer. Expert, direct, no filler. Grep-first, codebase-only.
 | SKILL.md | < 200 lines | Loaded on every invocation — competes with codebase context |
 | Agent files | < 120 lines | Agents have their own context windows — every instruction line competes with files they need to read |
 | References | On-demand via Read | Use `references/` folder for phase-specific detail, loaded only when needed |
-| Gotchas | Inline in SKILL.md (~3-5 bullets) | Keep short gotchas inline — available at execution time with zero extra file reads. When a phase accumulates >5 gotchas through evolve cycles, overflow to `references/` and keep only the top 3 inline. |
+| Gotchas | Inline in SKILL.md (~3-5 bullets) | Keep short gotchas inline — available at execution time with zero extra file reads. When a phase accumulates >5 gotchas through evolve cycles, overflow to `references/` and keep only the top 3 inline. **Deduplication rule:** gotchas that restate hard gates (evidence-before-claims, no stubs/placeholders, test-then-code) waste budget — only include phase-specific gotchas that the agent wouldn't know from CLAUDE.md alone. |
 
 **Placeholder two-tier system:**
 - **Hard ban** (auto-reject): "TBD", "TODO", "etc.", "similar", "and so on", "as needed"
@@ -1074,7 +1090,7 @@ Code explorer. Expert, direct, no filler. Grep-first, codebase-only.
 
 ## Agent Voice
 
-All agents inherit a unified voice: competent identity with compressed output. These are independent levers — concise output does not require a dumbed-down identity.
+All agents inherit a unified voice: competent identity with compressed output. These are independent levers — concise output does not require a dumbed-down identity. **Define once, reference everywhere** — agent files use one line ("Follows framework voice conventions") rather than repeating the full voice rules. This frees ~10-15 lines per agent file for domain-specific instructions.
 
 **Persona pattern:** `"[Role]. Expert, direct, no filler. [domain-specific trait]."`
 
@@ -1244,6 +1260,16 @@ Decisions made during framework design, preserved for context.
 28. **Extension types** — agents for all extendable phases. Skills for craft only (the only phase where extensions do work, not just report findings). Skills fire per-unit after craft subagent completes, before mini-review.
 29. **Review defense** — orchestrator inline defense for blueprint review, threshold defense for code review (defend findings that contradict blueprint/durable decisions). Rejected findings feed retro via existing categories (model-capability-gap, what went well/wrong).
 30. **Extension caps** — per-phase caps (router: 2, trace: 2, craft: 2, verify: 3). Evolvable through propose cycle. Absence-based tracking: extensions that produce no findings over multiple retros get surfaced by `/propose` for removal.
+31. **4-handoff boundary** — std/deep pipeline has 4 effective disk handoffs (sketch → blueprint → craft → retro). Explorer findings stay in-context. This is the intentional ceiling per NeurIPS/Google multi-agent research. Do not add phases.
+32. **Ordered test scenarios** — blueprint test scenarios are priority-ordered lists. Craft processes them one-at-a-time in RED-GREEN-REFACTOR cycles. Batch test generation is explicitly prohibited — it validates the agent's imagination, not the code.
+33. **Explorer attribution** — both code-explorer and docs-explorer attribute findings to source (file:line evidence vs model knowledge vs external research). Hallucinated explorer findings poison the entire downstream pipeline.
+34. **Pipeline failure recovery** — blueprint escalation after 3 retries offers restart-from-sketch option. Craft runs integration checks between units (unit 2+) to catch cascading failures early.
+35. **Agent voice deduplication** — define voice rules once in framework, reference with one line in agent files. Gotchas deduplicated against hard gates — only phase-specific gotchas inline.
+36. **Hook roadmap** — v1 accepts instruction-dependent hard gates (~60-70% compliance). v1.1 hooks graduate when retros surface specific failures (PostCompact, PreToolUse .docs/ guard, SubagentStop). Each hook has an explicit activation trigger.
+37. **Research linting** — /propose scans .docs/research/ for stale (>90 days), orphaned (no references), and contradictory docs. Inspired by Karpathy's wiki linting pattern. Prevents stale knowledge from misleading future tasks.
+38. **Token effort signal** — retro frontmatter includes `token_effort: high|medium|low` agent self-assessment. Not exact measurement — agents can't reliably measure tokens. Feeds /propose pattern detection for routing and complexity signals.
+39. **Artifact ecosystem as knowledge graph** — YAML frontmatter IS the graph. `module:` and `tags:` are edges, `grep` is traversal. Skills teach agents HOW to traverse (grep patterns, field meanings, downstream consumers) not just WHERE to read/write. Routing guide contains the full artifact ecosystem map.
+40. **Affected modules in retros** — retro frontmatter includes `affected_modules:` (list) for cross-module pattern detection. Single-module tasks omit it. /propose uses this to detect cross-module pain points that `module:` (singular) would miss.
 
 ## Open Questions
 

@@ -7,11 +7,14 @@ version: 0.1
 
 # Agentic Kit Framework
 
-A meta-framework for AI-assisted software development. One entry point, three workflows, knowledge that compounds over time.
+**Goal:** Converge toward one-shot task execution through project-specific learning. Each task produces structured reflection. Reflections surface patterns. Patterns become tighter instructions, better skills, and sharper guardrails. Individual task quality is a side effect of the feedback loop.
+
+**Strategy:** Invest in the smartest model + structured ceremony for first-pass success. Opus getting it right on attempt 1 is cheaper than a weaker model getting it right on attempt 3 after two debugging cycles — because each retry burns context, tokens, and human attention. The evolve cycle compounds this: as CLAUDE.md, skills, and patterns tighten over time, even the first attempt gets better context.
 
 **Core sources:** Compound Engineering (lifecycle, agents, artifacts), Superpowers (discipline, gates, TDD, verification), CC10X (circuit breakers, routing), Matt Pocock (TDD philosophy, deep modules, behavioral testing), ECC (agent design, file budgets, grep-first search).
 
 **Design principles:**
+- **First-pass success over per-token cost.** Use the strongest model for high-judgment work. Retries are more expensive than getting it right the first time.
 - **Context window is gold — use the disk.** Every phase that produces output writes to disk. Handoff between phases is via persisted artifacts. Skills are session-independent — you can `/compact`, start a new conversation, or come back days later.
 - **Trust the implementing agent.** Blueprints describe what to build, not how to type it.
 - **Right-size ceremony to scope.** Lightweight changes get lightweight process. But every change gets something.
@@ -40,6 +43,36 @@ Post-cycle (manual):
 
 Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
 
+### Phase Invocation
+
+The parent session (router/orchestrator) is the pipeline engine. Skills do not invoke each other. The orchestrator loads each phase's SKILL.md, follows it, writes artifacts to disk, then loads the next phase's SKILL.md. This means:
+
+- `/start` is the only user-invoked skill. It loads the router skill, which orchestrates the rest.
+- Phase transitions are explicit: orchestrator finishes one phase, loads the next via Skill tool.
+- Artifacts on disk are the handoff mechanism — each phase reads the previous phase's output from `.docs/work/<slug>/`.
+- Subagents (explorers, craft agents, reviewers) are dispatched by the orchestrator via the Agent tool, not as skill invocations.
+- Session independence: if the session ends mid-pipeline, the user re-invokes `/start`, router detects existing work folder via resume flow, and offers to continue from the last completed phase.
+
+```
+User invokes /start
+  → Router skill loaded (orchestrator follows it)
+    → Router dispatches explorer agents (Agent tool, parallel)
+    → Router invokes sketch skill (Skill tool)
+      → Orchestrator follows sketch, writes sketch.md
+    → Router invokes blueprint skill (Skill tool)
+      → Orchestrator follows blueprint, dispatches blueprint reviewer (Agent tool)
+      → Writes blueprint.md
+    → Router invokes craft skill (Skill tool)
+      → Orchestrator dispatches craft subagents per unit (Agent tool, sequential)
+      → Orchestrator runs craft extensions (Agent tool + Skill tool for craft skills)
+    → Router invokes verify skill (Skill tool)
+      → Orchestrator runs verification inline, dispatches code reviewer (Agent tool)
+    → Router invokes retro skill (Skill tool)
+      → Orchestrator writes retro.md
+```
+
+Lightweight skips sketch, blueprint, explorers, and extensions — router goes directly to craft → verify → retro, all inline in the parent session.
+
 ## Skills
 
 ### User-Invokable
@@ -59,7 +92,7 @@ Pipeline ends at retro. Git workflow (commit, PR, merge) is the user's choice.
 | `sketch` | Capture what/why via checkpoint summary pattern. Two modes: BUILD and FIX. |
 | `blueprint` | Define how. Implementation units, durable decisions, test scenarios. |
 | `craft` | Implement with TDD (guardrails + exception protocol). Inline (light) or sequential subagent-per-unit (std/deep). |
-| `verify` | Single step, scales by tier. Evidence-based verification + multi-persona review (std/deep). |
+| `verify` | Single step, scales by tier. Evidence-based verification + unified code review (std/deep). |
 | `retro` | Per-task reflection. Automatic at end of every BUILD/FIX. Living document during session. |
 
 ## Agents
@@ -101,18 +134,21 @@ Single agent dispatched during blueprint review gate for std/deep tiers. Validat
 - Evidence-based findings: file/line, observed issue, expected, why it's a problem. Findings without specifics suppressed.
 - Findings feed back into blueprint revision (max 3 retries before escalating to user)
 - Blueprint is not extendable — framework-defined reviewer only
+- **Orchestrator defense (inline):** Orchestrator (Opus) evaluates each finding against explorer findings and sketch context. Rejects false positives with reasoning. Defense decisions logged for retro.
 
-### Code Review Agents (opus)
+### Code Reviewer (opus)
 
-Dispatched during verify for std/deep tiers only. Read-only, return structured findings. Last line of defense before shipping — opus for review quality.
+Single unified agent dispatched during verify for std/deep tiers only. Read-only, returns structured findings. One Opus agent doing three sequential passes is more coherent and 3x cheaper than three separate agents reading the same diff.
 
-**Framework always-on:**
+**Three sequential passes with checklists:**
 
-| Agent | Focus |
+| Pass | Checklist |
 |---|---|
-| `correctness-reviewer` | Logic errors, edge cases, state bugs, error propagation |
-| `testing-reviewer` | Coverage gaps, weak assertions, brittle tests |
-| `maintainability-reviewer` | Coupling, complexity, naming, dead code |
+| Correctness | Logic errors, edge cases, state bugs, error propagation |
+| Testing | Coverage gaps, weak assertions, brittle tests |
+| Maintainability | Coupling, complexity, naming, dead code |
+
+Each pass produces findings under its own heading. If a pass has no findings, it writes "No findings." — forcing the reviewer to consider each concern rather than fixating on the first thing it sees.
 
 Domain-specific reviewers (security, performance, api-contract, data-migrations) are project-level — add via `/extend` verify extensions.
 
@@ -121,6 +157,7 @@ Domain-specific reviewers (security, performance, api-contract, data-migrations)
 - Severity scale: P0 (critical) -> P1 (high) -> P2 (moderate) -> P3 (low)
 - Zero-finding halt: if nothing found, say so and stop. No inventing issues.
 - Stack-agnostic: no language-specific reviewers in the framework. Projects add their own via `/extend`.
+- **Threshold defense:** Orchestrator defends findings that contradict the blueprint or durable decisions. Findings aligned with the spec are accepted. Rejected findings logged with reasoning for retro.
 
 **Finding format (plain markdown, in-context):**
 ```
@@ -186,16 +223,16 @@ The only user-facing entry point for work. Two-pass routing:
 3. **Dispatch explorers** (std/deep only) with directed context informed by self-look. Lightweight skips explorers.
 4. **Ensure clarity** via dynamic questioning scaled to user's input clarity.
 
-**Checkpoint summaries include agent assumptions** — not just "here's what you told me" but "here's what you told me + here's what I'm assuming based on MAP.md, CLAUDE.md, and codebase context." User corrects wrong assumptions, confirms correct ones. Accelerates convergence to shared understanding.
+**Checkpoint summaries include agent assumptions** — not just "here's what you told me" but "here's what you told me + here's what I'm assuming based on MAP.md, CLAUDE.md, and codebase context + 0-2 genuine questions with recommended answers for decisions that need user judgment." User corrects wrong assumptions, answers or confirms genuine questions. Questions are expensive — if the codebase can answer it, don't ask.
 
 **Dynamic questioning depth:**
 
 | User clarity | Router behavior |
 |---|---|
-| Both intent and scope clear | Classify, confirm, dispatch. 1-2 exchanges. |
-| Intent clear, scope unclear | 2-3 scoping questions, then dispatch. |
-| Intent unclear | Probe intent first, then scope. 3-5 exchanges. |
-| Both unclear | Iterative questioning until dispatch-ready. 5+ exchanges. |
+| Both intent and scope clear | Classify, confirm, dispatch. 1 checkpoint round. |
+| Intent clear, scope unclear | 1-2 checkpoint rounds to scope, then dispatch. |
+| Intent unclear | Probe intent first, then scope. 2-3 checkpoint rounds. |
+| Both unclear | Iterative checkpoints until dispatch-ready. |
 
 **Exit condition:** The router stops questioning when it can write a clear one-paragraph dispatch summary.
 
@@ -250,18 +287,20 @@ Passes:   → blueprint
 Captures **what** and **why**. One skill, two modes. Produces `sketch.md`.
 
 **Checkpoint summary pattern:**
-- Ask up to ~5 questions per round
-- Write checkpoint summary including agent assumptions from explorer findings, MAP.md, and codebase context: "Here's what I understand so far: [summary + assumptions]. Any corrections?"
-- User only corrects wrong assumptions, confirms correct ones — accelerates convergence
-- Next round if needed, or proceed when mutual understanding is reached
-- Never 50+ sequential questions. Always checkpoint.
+- If a question can be answered by exploring the codebase, explore instead of asking.
+- Form assumptions and recommendations from codebase evidence (explorer findings, MAP.md, grep, git history).
+- Present checkpoint summary: facts, assumptions, and recommendations — with 0-2 genuine questions where user judgment is needed. Each question includes the agent's recommended answer.
+- **Judgments** (approach choices, priorities, tradeoffs): ask the user's thinking before presenting the agent's recommendation. Facts don't anchor; recommendations do.
+- User scans summary, corrects wrong assumptions, answers genuine questions (or confirms with "yes").
+- Next round if needed, or proceed when mutual understanding is reached.
+- Questions are expensive, assumptions are cheap to confirm. Most rounds should be confirmations, not interrogations.
 
 **BUILD mode sections:**
 - Problem/opportunity being addressed
 - Why now, what's the motivation
 - What exists today (from explorer findings)
 - Affected systems and modules
-- Approaches considered (2-3, all shown THEN recommend — anti-anchoring hard rule)
+- Approaches considered (2-3, ask user's instinct first, THEN show all options, THEN recommend — anti-anchoring)
 - Constraints and non-goals
 - Success criteria
 - Research context (prior retros, existing patterns, relevant files found by explorers)
@@ -278,7 +317,7 @@ Captures **what** and **why**. One skill, two modes. Produces `sketch.md`.
 - Blocking vs deferred open questions
 
 **Gotchas:**
-- Show all approaches before recommending one — anchoring on the first idea skips better alternatives
+- Ask user's instinct on approach before presenting options — anchoring on the first idea skips better alternatives
 - Separate blocking questions from deferred ones — blocking questions must resolve before blueprint
 
 ### Blueprint (BUILD and FIX, std/deep only)
@@ -330,11 +369,20 @@ Receives: dispatch summary, user input (from router context)
 Produces: code changes, tests
 Passes:   → verify
 ```
-- No subagent. Main session implements directly.
-- Works from router context (self-look + user input).
-- Guardrails cycle: RED -> verify fail -> GREEN -> verify pass -> REFACTOR.
-- No per-task review loop. Verify at the end covers it.
-- No extensions — lightweight skips `.docs/extend/craft.md`.
+No subagent. Main session (orchestrator) implements directly. No extensions — lightweight skips `.docs/extend/craft.md`.
+
+**Step-by-step:**
+1. Identify the change from router context (dispatch summary + self-look findings)
+2. Identify the test to write (behavioral, public interface)
+3. **RED** — write one failing test. Run it. Confirm it fails for the expected reason.
+4. **GREEN** — write the minimum code to pass. Run tests. Confirm green, no regressions.
+5. **REFACTOR** — clean up if needed (naming, duplication). Keep green.
+6. Repeat 2-5 if the change has multiple behaviors (rare for lightweight — most are single-behavior).
+7. Pass to verify.
+
+**Exception protocol applies:** if the change is non-testable (CSS, config, migration), state why, specify alternate verification, proceed to verify.
+
+**No per-task review loop.** Lightweight verify at the end covers correctness. No blueprint to check against — the router's dispatch summary is the spec.
 
 **Standard/Deep:**
 ```
@@ -348,12 +396,11 @@ Passes:   → verify
 - Orchestrator reads blueprint once, extracts per-unit context.
 - Fresh opus subagent per unit, dispatched **sequentially**. Context isolation, not filesystem isolation. No parallel dispatch in v1.
 - Orchestrator constructs self-contained context per subagent — no file path reading assignments. Subagent gets everything it needs upfront.
-- **Per-unit review (inline, by orchestrator):**
-  - Tests pass for this unit
-  - No stubs/placeholders
-  - Matches the blueprint's implementation unit goal
-  - Quick correctness scan
-- **Between-unit extension checks** from `.docs/extend/craft.md` (if configured).
+- **Per-unit sequence:**
+  1. Craft subagent implements the unit → DONE / BLOCKED / NEEDS_CONTEXT
+  2. Agent extensions from `.docs/extend/craft.md` — fast checks (lint, style, patterns)
+  3. Skill extensions from `.docs/extend/craft.md` — domain workflows (frontend-design, data-migration). Agents run first so skills work on clean code.
+  4. Mini-review (inline, by orchestrator): tests pass, no stubs/placeholders, matches blueprint goal, quick correctness scan
 - Unit status handling:
   - DONE → next unit
   - BLOCKED → assess: context problem → re-dispatch with more context. Too large → break down, re-dispatch. Genuine blocker → escalate to user.
@@ -448,12 +495,12 @@ Passes:   → retro
 ```
 Receives: diff, sketch.md path, blueprint.md path
 Reads:    test output, build output, sketch.md, blueprint.md, .docs/extend/verify.md (additional reviewers)
-Dispatches: 3 always-on framework reviewers (correctness, testing, maintainability) + extension reviewers from .docs/extend/verify.md
+Dispatches: unified code-reviewer (3 sequential passes: correctness, testing, maintainability) + extension reviewers from .docs/extend/verify.md
 Produces: verification evidence, review findings (structured per-finding)
 Passes:   → retro (after P0/P1 findings resolved)
 ```
 - Orchestrator runs verification suite inline. Review agents are read-only code analysis only.
-- Evidence-based findings (see Code Review Agents finding format)
+- Evidence-based findings (see Code Reviewer finding format)
 - Severity-ordered results
 - Findings acted on by priority:
   - P0 (critical): fix immediately
@@ -531,6 +578,8 @@ This makes retros valuable for propose/evolve because they capture real-world re
 | Poor code patterns/structure | Codebase structure caused confusion or bugs |
 | Poor test coverage | Pre-existing gap in tests |
 | Poor enforcement | Verification didn't catch a problem |
+| Model capability gap | Agent produced incorrect/low-quality output due to model limitations (e.g., Sonnet reviewer flagging valid Opus code) |
+| Poor model assignment | Wrong model tier for the role — over-spending (Opus on mechanical work) or under-spending (Sonnet on high-judgment work) |
 | Poor skill behavior | Framework bug → report upstream for meta-framework improvement + local adaptation via `/evolve` if needed |
 | External/environmental | Third-party service, CI, environment issue |
 
@@ -659,11 +708,24 @@ Platform pattern: apps/<platform>/src/...
 
 ## Phase Extensions
 
-Projects add agents/skills to framework phases via `/extend`. Each extendable phase has its own file in `.docs/extend/`, loaded by the phase skill at entry. Non-extendable phases (sketch, blueprint, retro, explore) are single-agent or conversational — no dispatch point for extensions.
+Projects add extensions to framework phases via `/extend`. Each extendable phase has its own file in `.docs/extend/`, loaded by the phase skill at entry. Non-extendable phases (sketch, blueprint, retro, explore) are single-agent or conversational — no dispatch point for extensions.
 
-**Agent sources:**
-- **Project** — `.claude/agents/`, project-specific, committed to repo
-- **User** — `~/.claude/agents/`, personal, cross-project (e.g., code-simplifier)
+**Extension types:**
+- **Agents** — dispatched subagents that receive context, do focused work, return structured findings. Used by router, trace, craft, and verify.
+- **Skills** — workflow extensions that take over a slice of work with their own process. Used by **craft only** — the only phase where extensions need to *do work*, not just report findings. Fire per-unit, after craft subagent completes and before mini-review loop.
+
+**Extension sources:**
+- **Project** — `.claude/agents/` or `.claude/skills/`, project-specific, committed to repo
+- **User** — `~/.claude/agents/` or `~/.claude/skills/`, personal, cross-project
+
+**Extension caps (per-phase):** Forces prioritization, prevents cost bloat. Evolvable — `/propose` can recommend raising a cap if retros show consistent gaps.
+
+| Phase | Framework agents | Extension cap | Reasoning |
+|---|---|---|---|
+| Router | 2 (code + docs explorer) | 2 | Parallel explorers, bounded cost per dispatch |
+| Trace | 0 | 2 | Investigation is focused, few projects need extras |
+| Craft | 0 | 2 | Runs per-unit — cost multiplies with blueprint size |
+| Verify | 1 (unified code-reviewer) | 3 | Most common extension point, but 4 total is substantial |
 
 ### Extendable Phases
 
@@ -675,11 +737,12 @@ Example: `compliance-explorer` checks regulatory docs, `design-system-explorer` 
 
 Example: `design-reviewer` assesses if the issue is a design flaw vs implementation bug, `performance-profiler` analyzes performance regressions, `security-assessor` evaluates security implications.
 
-**Craft** (`.docs/extend/craft.md`) — between-unit checks that run after each unit's mini-review loop completes (std/deep only, lightweight skips extensions). Extensions catch issues early before they compound across units. Must be fast — they run between every unit.
+**Craft** (`.docs/extend/craft.md`) — agents and skills that fire per-unit after the craft subagent completes, before the mini-review loop (std/deep only, lightweight skips extensions). Extensions catch issues early before they compound across units. Agents run between-unit checks (fast). Skills augment the implementation with their own workflow (domain-specific process).
 
-Example: `lint-enforcer` runs project linter, `style-checker` enforces code patterns, `doc-generator` generates docs alongside code.
+Example agents: `lint-enforcer` runs project linter, `style-checker` enforces code patterns.
+Example skills: `frontend-design` applies design system conventions and visual quality, `data-migration` handles schema change workflows, `api-design` enforces REST/GraphQL conventions.
 
-**Verify** (`.docs/extend/verify.md`) — additional review agents dispatched alongside framework reviewers (correctness, testing, maintainability). Extensions provide project-specific or domain-specific code review. Most natural and common extension point.
+**Verify** (`.docs/extend/verify.md`) — additional review agents dispatched alongside the unified code-reviewer. Extensions provide project-specific or domain-specific code review. Most natural and common extension point.
 
 Example: `security-reviewer` for auth-heavy projects, `rails-reviewer` for Rails conventions, `hipaa-reviewer` for healthcare compliance, `code-simplifier` for code quality.
 
@@ -694,16 +757,29 @@ date_updated: 2026-04-11
 agents:
   - name: security-reviewer
     source: project
-  - name: hipaa-reviewer
-    source: project
   - name: code-simplifier
     source: user
+```
+
+```yaml
+---
+phase: craft
+date_updated: 2026-04-11
+---
+
+agents:
+  - name: lint-enforcer
+    source: project
+skills:
+  - name: frontend-design
+    source: project
 ```
 
 **Rules:**
 - All extensions are always-on — runs every time the phase executes
 - Agent files follow the same format as framework agents (role, inputs, output format, file budget)
-- Extensions use the same evidence-based finding format and severity scale as framework agents
+- Agent extensions use the same evidence-based finding format and severity scale as framework agents
+- Skill extensions (craft only) follow standard skill format. Fire per-unit, sequentially after agents.
 
 ### /extend
 
@@ -711,10 +787,12 @@ Invokable skill for managing phase extensions.
 
 1. Accept agent/skill name and target phase
 2. Reject non-extendable phases (sketch, blueprint, retro, explore) with explanation
-3. Locate agent file (`.claude/agents/` or `~/.claude/agents/`)
-4. Assess fit — does the agent's role and output format match the phase's expectations?
-5. Suggest modifications if the agent needs adaptation (e.g., missing evidence-based finding format for verify, missing structured output for router explorers)
-6. Create or update `.docs/extend/<phase>.md` with entry
+3. Reject skill extensions for non-craft phases (only craft supports skill extensions)
+4. Locate file (`.claude/agents/`, `~/.claude/agents/`, `.claude/skills/`, or `~/.claude/skills/`)
+5. Assess fit — does the extension's role and output format match the phase's expectations?
+6. Suggest modifications if needed (e.g., missing evidence-based finding format for verify agents, missing structured output for router explorers)
+7. Enforce extension cap for the target phase — reject if cap reached, suggest replacing an existing extension
+8. Create or update `.docs/extend/<phase>.md` with entry
 
 ## YAML Frontmatter Schemas
 
@@ -833,11 +911,9 @@ Changes:
 
 ### v1
 
-**PostCompact:**
-- Re-inject all hard gates + TDD exception protocol as a compact block after compaction (compaction may summarize away rules, dropping compliance)
-- Exact re-injection text is a hook implementation detail, not framework spec
+No framework-level hooks in v1. Hard gates survive compaction structurally via CLAUDE.md (re-read from disk, not from context). Skills re-load their SKILL.md at each phase entry, naturally re-injecting relevant rules.
 
-Router handles all framework discovery (MAP.md, CLAUDE.md, .docs/). SessionStart, PreCompact, and Stop hooks dropped for v1 — artifacts persist at phase boundaries, no emergency persistence needed.
+Router handles all framework discovery (MAP.md, CLAUDE.md, .docs/). Artifacts persist at phase boundaries — no emergency persistence needed.
 
 ### Project-level (verification)
 
@@ -856,20 +932,23 @@ Document the project's verification suite in CLAUDE.md (see Project CLAUDE.md Re
 
 ### Deferred
 
+- PostCompact (re-inject hard gates as defense-in-depth — revisit if retros surface "agent forgot hard gate after compaction")
 - PreToolUse guards (protect .docs/ artifacts from accidental overwrites)
 - SubagentStop (validate agent contract/outputs)
 
 ## Models
 
+Principle: first-pass success over per-token cost. If the agent gets it wrong, the retry loop (re-dispatch, re-read, re-verify) costs more than the model upgrade. Use the strongest model for high-judgment work, cheaper models only where the task is bounded and errors are cheap to catch.
+
 | Role | Default | Reasoning |
 |---|---|---|
-| Router / orchestration | Parent session | Strongest reasoning for classification and questioning |
-| Explorer agents | Sonnet | Fast, research-capable (Context7, external docs, GitHub) |
-| Craft subagents | Opus (sonnet for mechanical) | First-pass success > per-token cost. Sonnet only for trivially mechanical tasks. |
-| Code review agents | Opus | Last line of defense before shipping — review quality matters most |
-| Blueprint reviewer | Sonnet | Structured document, focused checks, downstream safety nets |
-| Docs updater | Sonnet | Structured updates, moderate judgment (MAP.md, research docs) |
-| Bounded checks | Haiku | YAML frontmatter validation, strict pass/fail. Narrow slot. |
+| Router / orchestration | Parent session | Classification errors cascade through the entire pipeline — strongest reasoning justified |
+| Explorer agents | Sonnet | Research is bounded: grep, read, summarize. Errors caught at sketch checkpoint — low retry cost |
+| Craft subagents | Opus (sonnet for mechanical) | First-pass success > per-token cost. Wrong implementation = rework entire unit. Sonnet only for trivially mechanical tasks. |
+| Code reviewer | Opus | False negatives ship bugs, false positives waste Opus craft agent time via unnecessary defense loops |
+| Blueprint reviewer | Sonnet | Structured checks against a written spec. Orchestrator (Opus) defends against false positives — low damage from reviewer errors |
+| Docs updater | Sonnet | Structured updates with moderate judgment. Errors caught by retro and evolve — self-correcting |
+| Bounded checks | Haiku | YAML frontmatter validation, strict pass/fail. Deterministic — model capability barely matters |
 
 ## Tool Preference
 
@@ -883,13 +962,110 @@ Prefer the lowest-overhead tool that reliably solves the task.
 
 Principle: measure by total token cost per answer, not by tool type. CLI usually wins, but MCP wins when it returns focused data in one call.
 
-## Skill & Agent File Budgets
+## Skill & Agent File Formats
+
+### SKILL.md Format
+
+```yaml
+---
+name: sketch                          # kebab-case identifier
+description: >
+  Capture what/why for std/deep BUILD and FIX tasks.
+  Triggered after router dispatches to sketch phase.
+# Optional fields:
+phase: sketch                         # internal phase name (omit for user-invokable skills)
+type: internal                        # internal | user-invokable
+---
+```
+
+**Required sections (order matters):**
+
+1. **Context** — what this skill receives and what it should read (maps to the Receives/Reads block in the spec)
+2. **Procedure** — numbered steps the orchestrator follows. This is the core of the skill.
+3. **Output** — what this skill produces and where it goes (maps to Produces/Passes)
+4. **Gotchas** — 3-5 bullets, inline (see overflow rule below)
+
+**Optional sections:**
+- **References** — list of `references/*.md` files to load for specific sub-procedures
+- **Templates** — inline artifact templates (e.g., sketch.md structure) if short, or pointer to `references/` if long
+
+**Directory structure per skill:**
+```
+skills/<skill-name>/
+  SKILL.md              # < 200 lines, loaded on every invocation
+  references/           # on-demand detail, loaded via Read when needed
+    <topic>.md
+  templates/            # artifact templates if needed
+    <artifact>.md
+```
+
+### Agent File Format
+
+```yaml
+---
+name: code-explorer                   # kebab-case identifier
+role: Codebase exploration            # one-line role description
+model: sonnet                         # sonnet | opus | haiku
+phase: router                         # which phase dispatches this agent
+budget: 15 files                      # file read budget
+output_budget: 15-20 lines            # output size budget
+---
+```
+
+**Required sections:**
+
+1. **Persona** — single line following the pattern: `"[Role]. Expert, direct, no filler. [trait]."`
+2. **Inputs** — what the agent receives from the orchestrator
+3. **Procedure** — search/analysis steps the agent follows
+4. **Output format** — exact structure the agent must return (e.g., Key Findings / Relevant Files / Open Questions)
+5. **Constraints** — scope boundaries, what the agent must NOT do
+
+**Example (code-explorer):**
+```markdown
+---
+name: code-explorer
+role: Codebase exploration
+model: sonnet
+phase: router
+budget: 15 files
+output_budget: 15-20 lines
+---
+
+Code explorer. Expert, direct, no filler. Grep-first, codebase-only.
+
+## Inputs
+- Search terms and scope from router's self-look
+- MAP.md for project structure
+
+## Procedure
+1. Read MAP.md for orientation
+2. Grep for search terms provided by router
+3. Read matched files (max 15)
+4. Trace dependencies and patterns
+5. Note technical constraints
+
+## Output Format
+## Key Findings
+...
+## Relevant Files
+...
+## Open Questions
+...
+
+## Constraints
+- Codebase only — excludes `.docs/`
+- Grep-first narrowing, not broad reads
+- No implementation suggestions — findings only
+```
+
+### File Budgets
 
 | Target | Budget | Why |
 |---|---|---|
 | SKILL.md | < 200 lines | Loaded on every invocation — competes with codebase context |
 | Agent files | < 120 lines | Agents have their own context windows — every instruction line competes with files they need to read |
 | References | On-demand via Read | Use `references/` folder for phase-specific detail, loaded only when needed |
+| Gotchas | Inline in SKILL.md (~3-5 bullets) | Keep short gotchas inline — available at execution time with zero extra file reads. When a phase accumulates >5 gotchas through evolve cycles, overflow to `references/` and keep only the top 3 inline. |
 
 **Placeholder two-tier system:**
 - **Hard ban** (auto-reject): "TBD", "TODO", "etc.", "similar", "and so on", "as needed"
@@ -916,16 +1092,18 @@ Pattern: `[thing] [action] [reason]. [next step].`
 Not: "Sure! I've identified that the issue is likely caused by a race condition in the authentication middleware."
 Yes: "Race condition in auth middleware. Token expiry check uses `<` not `<=`. Fix:"
 
-**Token budgets (provisional guidelines, calibrated through retros):**
+**Output budgets (provisional guidelines, calibrated through retros):**
+
+In lines, not tokens — models can see and self-regulate against line counts. Orchestrator flags significant overruns in retro for calibration.
 
 | Agent output | Budget |
 |---|---|
-| Explorer findings | < 500 tokens |
-| Review findings | < 200 tokens per issue |
-| Craft status | < 100 tokens |
-| Retro sections | < 300 tokens per section |
+| Explorer findings | ~15-20 lines |
+| Review finding (single) | ~5-8 lines |
+| Craft status | 2-3 lines |
+| Retro section | ~10-12 lines |
 
-**Auto-clarity:** Drop compressed voice for security warnings, irreversible action confirmations, and multi-step sequences where fragments risk misread. Resume after.
+**Auto-clarity:** Drop compressed voice for security warnings, irreversible action confirmations, multi-step sequences where fragments risk misread, and when the user asks to clarify or repeats a question. Resume after.
 
 ## Project CLAUDE.md Requirements
 
@@ -936,10 +1114,70 @@ The project's `CLAUDE.md` must include so agents have the right context:
 3. **Tech stack** — languages, frameworks, test runners per platform
 4. **Conventions** — error handling, naming, patterns specific to this project
 5. **Verification suite** — which checks to run before completion claims (test, lint, typecheck, format, build, knip, etc.) and exact commands for each
+6. **Hard gates** — include the framework's hard gates section (see below). CLAUDE.md is re-read from disk after compaction, making it the most reliable mechanism for rules that must survive long sessions.
+
+### CLAUDE.md Template
+
+```markdown
+# [Project Name]
+
+## Tech Stack
+- **Language:** [e.g., TypeScript 5.x]
+- **Framework:** [e.g., Next.js 15, Express 4]
+- **Database:** [e.g., PostgreSQL 16 via Prisma]
+- **Test runner:** [e.g., Vitest]
+- **Package manager:** [e.g., pnpm]
+
+## Commands
+- **Test:** `pnpm test`
+- **Test (single):** `pnpm test -- path/to/file`
+- **Lint:** `pnpm lint`
+- **Typecheck:** `pnpm typecheck`
+- **Format:** `pnpm format`
+- **Build:** `pnpm build`
+- **Dev:** `pnpm dev`
+
+## Verification Suite
+Run before any completion claim, in this order:
+1. `pnpm typecheck` — must pass with 0 errors
+2. `pnpm lint` — must pass
+3. `pnpm test` — must pass, read output, count failures
+4. `pnpm build` — must succeed
+
+## Available CLI Tools
+- `rtk` — token-optimized CLI proxy (use via hooks, transparent)
+- `tree` / `rtk tree` — directory listing
+- `gh` — GitHub CLI for PR/issue operations
+
+## Conventions
+- [Error handling pattern — e.g., "throw typed errors, catch at API boundary"]
+- [Naming — e.g., "kebab-case files, PascalCase components, camelCase functions"]
+- [Imports — e.g., "absolute imports via @/ alias"]
+- [State — e.g., "server state via React Query, no client-side global state"]
+
+## Workflow Artifacts
+- All artifacts in `.docs/` — dotdir, invisible to rg/grep by default
+- YAML frontmatter on all artifacts for grep-first retrieval
+- Work products: `.docs/work/<YYMMDD-slug>/` (sketch, blueprint, retro)
+- Research: `.docs/research/<topic>.md`
+- Extensions: `.docs/extend/<phase>.md`
+- Navigation: `.docs/MAP.md`
+
+## Hard Gates
+1. **DESIGN-THEN-CODE** — sketch (std/deep) or router classification (light) before implementation
+2. **OPTIONS-THEN-RECOMMEND** — present ALL approaches before recommending (anti-anchoring)
+3. **ARTIFACT-BEFORE-HANDOFF** — persist artifact to disk before transitioning to next phase
+4. **EXPLORE-BEFORE-IMPLEMENT** — router self-look always; explorer dispatch for std/deep
+5. **EVIDENCE-BEFORE-CLAIMS** — run verification, read output, then claim result
+6. **INVESTIGATE-THEN-FIX** — reproduce, hypothesize, confirm root cause, then fix
+7. **TEST-THEN-CODE** — write failing test first, then implementation (exception protocol for non-testable changes: state why, specify alt verification, retro tags exception)
+```
+
+Projects customize the template by filling in their specifics. The structure and hard gates stay constant — the content varies.
 
 ## Hard Gates
 
-Non-negotiable rules enforced across the framework. Instruction-based, re-injected via PostCompact hook to survive compaction.
+Non-negotiable rules enforced across the framework. Survive compaction via CLAUDE.md (re-read from disk) and skill re-loading at phase entry.
 
 1. **DESIGN-THEN-CODE** — Sketch (std/deep) or router classification (light) before implementation
 2. **OPTIONS-THEN-RECOMMEND** — Present ALL approaches before recommending (anti-anchoring)
@@ -964,8 +1202,8 @@ Non-negotiable rules enforced across the framework. Instruction-based, re-inject
 ## Interaction Principles
 
 - **One section per message** — wait for response before advancing (prevents rubber-stamping)
-- **Checkpoint summary pattern** — cap at ~5 questions per round, then write: "Here's what I understand so far: [summary with assumptions]. Any thoughts?" User corrects/confirms, next round or proceed. Repeat until mutual understanding. Used by both the router and the sketch.
-- **Ask user's thinking BEFORE presenting AI findings** — prevents anchoring
+- **Checkpoint summary pattern** — present facts + assumptions + 0-2 genuine questions (with recommended answers). Explore the codebase instead of asking when possible. User corrects/confirms, next round or proceed. Questions are expensive; assumptions are cheap to confirm. Used by both the router and the sketch.
+- **Anti-anchoring on judgments** — for approach choices, priorities, and tradeoffs, ask the user's thinking before presenting the agent's recommendation. For factual findings (codebase state, test results, explorer output), present then confirm. Facts don't anchor; recommendations do.
 - **Hold well-reasoned positions** when user disagrees — explain why, don't cave
 - **No sycophancy** — technical correctness over social comfort
 - **Dynamic depth** — match questioning intensity to user's clarity level
@@ -988,7 +1226,7 @@ Decisions made during framework design, preserved for context.
 10. **Scope upgrade/downgrade** — agent proposes with reasoning, user confirms. Upgrading: can happen during trace or craft, current context carries forward to sketch. Downgrading: can happen during sketch or blueprint, skip remaining ceremony, go to craft with existing artifacts. Nothing gets discarded.
 11. **Non-software tasks** — naturally supported. BUILD covers docs/design, EXPLORE covers research. Different verification criteria (no tests, but verify still applies).
 12. **Visual communication** — deferred. Project-specific (Figma, ASCII, etc). Framework accommodates visuals as context, doesn't prescribe format.
-13. **Hook implementation** — v1: PostCompact only (re-injects hard gates + TDD exception protocol). SessionStart, PreCompact, Stop dropped — router handles discovery, artifacts persist at phase boundaries. Project-level verification hooks configured per project.
+13. **Hook implementation** — v1: no framework-level hooks. Hard gates survive compaction via CLAUDE.md (re-read from disk) and skill re-loading. PostCompact deferred as defense-in-depth if retros surface compaction-related rule forgetting. Project-level verification hooks configured per project.
 14. **Two-pass routing** — router self-look (MAP.md, CLAUDE.md, grep .docs/ frontmatter, scan likely files, git context) for classification. Explorer dispatch for std/deep only. Lightweight skips explorers.
 15. **Evidence-based review findings** — drop numeric confidence scores. Findings require file/line, observed behavior, expected behavior, why it's a problem. Findings without file/line suppressed.
 16. **Sequential craft** — fresh opus subagent per unit, dispatched sequentially. Context isolation, not filesystem isolation. No parallel dispatch in v1.
@@ -1001,8 +1239,11 @@ Decisions made during framework design, preserved for context.
 23. **Extension simplification** — all extensions always-on, no conditional triggers. Lightweight craft skips extensions.
 24. **Staleness handling** — purely retro-surfaced, acted on through manual propose → evolve cycle.
 25. **Craft subagent context** — orchestrator constructs self-contained context per subagent. No file path reading assignments.
-26. **Framework code reviewers** — 3 always-on (correctness, testing, maintainability). Domain-specific reviewers (security, performance, etc.) are project extensions.
+26. **Unified code reviewer** — single Opus agent with 3 sequential passes (correctness, testing, maintainability). One coherent review for 1/3 the cost. Domain-specific reviewers (security, performance, etc.) are project extensions.
 27. **Agent voice** — framework default, projects can override. Token budgets provisional, calibrated through retros.
+28. **Extension types** — agents for all extendable phases. Skills for craft only (the only phase where extensions do work, not just report findings). Skills fire per-unit after craft subagent completes, before mini-review.
+29. **Review defense** — orchestrator inline defense for blueprint review, threshold defense for code review (defend findings that contradict blueprint/durable decisions). Rejected findings feed retro via existing categories (model-capability-gap, what went well/wrong).
+30. **Extension caps** — per-phase caps (router: 2, trace: 2, craft: 2, verify: 3). Evolvable through propose cycle. Absence-based tracking: extensions that produce no findings over multiple retros get surfaced by `/propose` for removal.
 
 ## Open Questions
 
@@ -1012,7 +1253,7 @@ Items to revisit as skills are built.
 2. **MAP.md usefulness** — ETH Zurich found LLM-generated navigation files don't help agents find files faster. MAP.md's primary purpose is router self-look for classification, not agent file discovery. Validate empirically from retros.
 3. **KV-cache prompt structure** — learn empirically how to structure prompts for cache hit rates.
 4. **Few-shot variation patterns** — learn from practice which tasks benefit from examples in prompts.
-5. **Token budgets** — provisional numbers for agent output (explorer < 500, review < 200 per issue, craft status < 100, retro < 300 per section). Calibrate through retros.
+5. **Output budgets** — provisional line counts for agent output (explorer ~15-20, review ~5-8 per issue, craft status 2-3, retro ~10-12 per section). Calibrate through retros.
 6. **Parallel craft** — sequential-only in v1. If retros show sequential execution is a bottleneck for deep tasks with many independent units, revisit with worktree-based parallel dispatch.
 7. **Subagent MCP access** — can subagents call MCP tools (Context7)? Affects docs-explorer external research path. Currently best-effort with gap flagging fallback.
 
@@ -1020,15 +1261,14 @@ Items to revisit as skills are built.
 
 Recommended sequence for implementing this framework as skills:
 
-1. Directory structure + YAML schemas + MAP.md template
-2. `retro` — capture learnings from day one while building the rest
-3. `craft` + `verify` (lightweight only) — the core build loop
-4. `/start` (router, lightweight only) — self-look, classification, no explorer dispatch
-5. `sketch` + `blueprint` — std/deep ceremony
-6. `trace` — FIX gate (must exist before craft handles FIX flows)
-7. Upgrade router to dispatch explorers for std/deep
-8. Explorer agents + code review agents + blueprint reviewer
-9. `/extend` — manage phase extensions
-10. `/propose` + `/evolve` — feedback loop
-11. PostCompact hook
-12. CLAUDE.md template — project instructions that make the framework discoverable
+1. CLAUDE.md template — hard gates + verification suite in place from the first task
+2. Directory structure + YAML schemas + MAP.md template
+3. `retro` — capture learnings from day one while building the rest
+4. `craft` + `verify` (lightweight only) — the core build loop
+5. `/start` (router, lightweight only) — self-look, classification, no explorer dispatch
+6. `sketch` + `blueprint` — std/deep ceremony
+7. `trace` — FIX gate (must exist before craft handles FIX flows)
+8. Upgrade router to dispatch explorers for std/deep
+9. Explorer agents + code reviewer + blueprint reviewer
+10. `/extend` — manage phase extensions
+11. `/propose` + `/evolve` — feedback loop

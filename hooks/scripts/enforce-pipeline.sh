@@ -3,11 +3,11 @@
 # Enforces DESIGN-THEN-CODE and INVESTIGATE-THEN-FIX hard gates.
 #
 # Blocks source-file writes when pipeline artifacts are out of order:
-#   - Blueprint exists without sketch → skipped design phase
-#   - FIX-type sketch exists without diagnose → skipped investigation
+#   - Draft blueprint exists without matching sketch → skipped design
+#   - Draft FIX sketch exists without matching diagnose → skipped investigation
 #
-# Only enforces when positive evidence of a pipeline violation exists.
-# Casual edits outside /yo are never blocked.
+# Slug-based matching (not date-based) so cross-day pipelines are covered.
+# Only fires when positive evidence of a violation exists.
 
 set -e
 
@@ -31,41 +31,40 @@ case "$FILE_PATH" in
   */__tests__/*|*/test/*|*/tests/*|*/spec/*|*/fixtures/*) exit 0 ;;
 esac
 
-TODAY=$(date +%y%m%d)
 SKETCHES_DIR="$CWD/.docs/sketches"
 BLUEPRINTS_DIR="$CWD/.docs/blueprints"
 DIAGNOSES_DIR="$CWD/.docs/diagnoses"
 
 # --- DESIGN-THEN-CODE ---
-# Blueprint without sketch = skipped the design phase.
-# Only fires for std/deep pipelines (lightweight never creates blueprints).
+# Draft blueprint whose slug has no matching sketch = skipped design phase.
+# Completed blueprints already passed through the pipeline — not checked.
 if [ -d "$BLUEPRINTS_DIR" ]; then
-  BLUEPRINT_COUNT=$(find "$BLUEPRINTS_DIR" -name "${TODAY}-*" -type f 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$BLUEPRINT_COUNT" -gt 0 ]; then
-    SKETCH_COUNT=$(find "$SKETCHES_DIR" -name "${TODAY}-*" -type f 2>/dev/null | wc -l | tr -d ' ')
-    if [ "$SKETCH_COUNT" -eq 0 ]; then
-      echo "DESIGN-THEN-CODE: Blueprint exists for today (${TODAY}-*) but no sketch found. Complete the sketch phase before implementing." >&2
-      exit 2
+  for bp in "$BLUEPRINTS_DIR"/*.md; do
+    [ -f "$bp" ] || continue
+    if head -15 "$bp" | grep -qi "status:.*draft"; then
+      SLUG=$(basename "$bp" .md)
+      if [ ! -f "$SKETCHES_DIR/$SLUG.md" ]; then
+        echo "DESIGN-THEN-CODE: Blueprint '$SLUG' exists without a matching sketch. Complete the sketch phase before implementing." >&2
+        exit 2
+      fi
     fi
-  fi
+  done
 fi
 
 # --- INVESTIGATE-THEN-FIX ---
-# FIX-type sketch without a matching diagnose = skipped investigation.
+# Draft FIX sketch whose slug has no matching diagnose = skipped investigation.
 if [ -d "$SKETCHES_DIR" ]; then
-  for sketch in "$SKETCHES_DIR/${TODAY}-"*; do
+  for sketch in "$SKETCHES_DIR"/*.md; do
     [ -f "$sketch" ] || continue
-    if head -20 "$sketch" | grep -qi "type:.*fix"; then
-      if [ -d "$DIAGNOSES_DIR" ]; then
-        DIAGNOSE_COUNT=$(find "$DIAGNOSES_DIR" -name "${TODAY}-*" -type f 2>/dev/null | wc -l | tr -d ' ')
-      else
-        DIAGNOSE_COUNT=0
+    HEADER=$(head -15 "$sketch")
+    if echo "$HEADER" | grep -qi "type:.*fix"; then
+      if echo "$HEADER" | grep -qi "status:.*draft"; then
+        SLUG=$(basename "$sketch" .md)
+        if [ ! -f "$DIAGNOSES_DIR/$SLUG.md" ]; then
+          echo "INVESTIGATE-THEN-FIX: FIX sketch '$SLUG' exists without a matching diagnosis. Run the diagnose phase before fixing." >&2
+          exit 2
+        fi
       fi
-      if [ "$DIAGNOSE_COUNT" -eq 0 ]; then
-        echo "INVESTIGATE-THEN-FIX: FIX sketch exists but no diagnosis artifact found. Run the diagnose phase before fixing." >&2
-        exit 2
-      fi
-      break
     fi
   done
 fi

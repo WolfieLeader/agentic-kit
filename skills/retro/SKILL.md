@@ -102,3 +102,13 @@ Passes to: done
 - User testing loop can modify code. Any code changes need fresh verification.
 - MAP.md updates are incremental -- do not rewrite or reorganize existing content.
 - Root cause categories are for structured thinking, not blame. Multiple categories normal.
+
+## Rationalization Red Flags
+
+If you catch yourself thinking any of these, STOP and follow the retro procedure:
+
+1. "Nothing went wrong, skip What Went Wrong" — even smooth tasks have learnings. Absence of friction is worth noting for /propose.
+2. "The retro is just overhead at this point" — frontmatter feeds /propose pattern detection. Without retros, the framework stops learning.
+3. "I'll keep this minimal" — brief is fine; empty sections are not. Every field exists for downstream pattern detection.
+4. "Token effort was medium, I guess" — self-assess honestly. Consistent 'high' on lightweight tasks is the signal that surfaces routing problems.
+5. "MAP.md doesn't need updating" — if you touched new modules, paths, or boundaries, it does. Incremental updates are cheap; stale MAPs cause wrong self-look results.

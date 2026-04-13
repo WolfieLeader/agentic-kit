@@ -110,3 +110,14 @@ Passes to: done | craft (lightweight) | sketch (std/deep)
 - Extension agents from `.docs/extensions/diagnose.md` are optional -- skip gracefully.
 - If reproduction requires destructive action (DB reset, cache clear), warn user first.
 - Symptom is not cause. "API returns 500" is a symptom -- push past it.
+
+## Rationalization Red Flags
+
+If you catch yourself thinking any of these, STOP and follow the diagnose procedure:
+
+1. "I can see the bug, skip reproduction" — reproduction confirms you're fixing the right thing. Visual inspection misses environmental and state-dependent triggers.
+2. "It's obviously a real bug" — classify anyway. Environmental issues and user error waste entire fix cycles when misidentified.
+3. "I know the root cause already" — state your hypothesis with confidence level. Tunnel vision on the first guess is the #1 cause of wrong fixes.
+4. "This is minor, skip the artifact" — every diagnosis is a data point for /propose. Without it, the framework can't detect systemic patterns.
+5. "Let me just fix it while I'm here" — diagnose routes to craft. Merging investigation and fix skips the severity assessment and tier decision.
+6. "Reproduction would take too long" — 2 attempts with different approaches. If it still fails, ask for context — don't skip and guess.

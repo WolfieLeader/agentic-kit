@@ -144,37 +144,7 @@ For module review: explorers provide the context, code-reviewer reviews the code
 ## Artifact Ecosystem
 
 `.docs/` is a knowledge graph traversable via YAML frontmatter grep.
-Grep is traversal. Frontmatter fields are edges. Modules are clusters.
-
-| Path | What | Key frontmatter | Writer | Reader |
-|---|---|---|---|---|
-| `sketches/<slug>.md` | What/why (std/deep) | module, tags, type, tier | sketch | blueprint, verify, retro |
-| `blueprints/<slug>.md` | How — units | source_sketch, tier, unit_count | blueprint | craft, verify |
-| `retros/<slug>.md` | Reflections | module, tags, token_effort, outcome, root_cause | retro | propose |
-| `reviews/<slug>.md` | Code review findings | module, tags, finding_count, p0-p3 counts | yo (REVIEW) | propose |
-| `diagnoses/<slug>.md` | Bug investigation | module, tags, classification, severity | diagnose | sketch, propose |
-| `reports/<date>-health.md` | Health snapshots | date, warn_count, info_count | /health | propose |
-| `research/<topic>.md` | External knowledge | module, tags, date_updated | docs-explorer | sketch, propose |
-| `evolve/<slug>-proposals.md` | Change proposals | retros_analyzed, status | /propose | /evolve |
-| `evolve/<slug>-evolve.md` | Execution log | source_proposals, changes_made | /evolve | — |
-| `extensions/<phase>.md` | Extension config | phase, date_updated | /extensions | phase skills |
-| `MAP.md` | Project navigation | — | /health init, retro | yo (self-look) |
-| `CHANGELOG.md` | Evolve history | — | /evolve | — |
-
-**Grep patterns:**
-```bash
-# All retros about a module
-grep -r "module: auth" .docs/retros/
-
-# All data points about a module
-grep -r "module: auth" .docs/{retros,reviews,diagnoses,reports}/
-
-# Resume candidates
-grep -r "status: draft" .docs/sketches/
-
-# Stale research
-grep -r "date_updated:" .docs/research/
-```
+See `references/artifact-ecosystem.md` for the full directory mapping, frontmatter schema, and grep patterns.
 
 ## Output
 
@@ -185,6 +155,7 @@ grep -r "date_updated:" .docs/research/
 ## References
 
 - `references/explore-pipeline.md` -- EXPLORE synthesis, citation rules, transition protocol
+- `references/artifact-ecosystem.md` -- `.docs/` directory mapping, frontmatter schema, grep patterns
 
 ## Gotchas
 
@@ -194,3 +165,14 @@ grep -r "date_updated:" .docs/research/
 - **Shortcuts exist.** Clear spec + urgency = fast-track.
 - **Resume before restart.** Check `.docs/sketches/` for draft status before creating new slug.
 - **REVIEW is not EXPLORE.** EXPLORE = understanding. REVIEW = evaluating and finding problems.
+
+## Rationalization Red Flags
+
+If you catch yourself thinking any of these, STOP and follow the router procedure:
+
+1. "I already know this codebase" — self-look catches changes since your last session. MAP.md and recent retros may have shifted the landscape.
+2. "This is obviously BUILD/FIX" — classify after self-look, not before. Misclassification routes to the wrong pipeline.
+3. "I can explore the code myself during craft" — explorers run in parallel and surface cross-module context you'd miss under implementation tunnel vision.
+4. "This seems simple, lightweight is fine" — 2+ files or 2+ concerns = standard. Underclassification causes mid-implementation rework.
+5. "Let me start fresh, the old sketch is stale" — ask the user. Their in-progress work may be more current than you think.
+6. "The user wants me to just do it" — urgency is a shortcut trigger, not a skip-everything trigger. Fast-track still classifies and confirms.

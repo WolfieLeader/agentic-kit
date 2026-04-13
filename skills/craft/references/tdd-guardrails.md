@@ -63,15 +63,15 @@ Reset: breaker resets when moving to a different issue/unit.
 
 If any of these cross your mind, STOP and write the test:
 
-1. "I'll write the test after"
-2. "Too simple to test"
-3. "Just manually verify"
-4. "The test is obvious"
-5. "Need to see implementation first"
-6. "Get it working then add tests"
-7. "Just a refactor"
-8. "Existing tests cover this"
-9. "Tests in a follow-up"
-10. "It's just a prototype/POC"
-11. "Too hard to write a test for"
-12. "Watch mode shows it's passing"
+1. "I'll write the test after" — the test defines what "working" means. Without it first, you're coding toward a moving target.
+2. "Too simple to test" — simple code has simple tests. If it's too simple to get wrong, the test takes 30 seconds and is free insurance.
+3. "Just manually verify" — manual verification dies with the session. A test persists across every future change.
+4. "The test is obvious" — if it's obvious, writing it is fast. Skip it and you're betting the obvious behavior never regresses.
+5. "Need to see implementation first" — TDD is the design tool. The test clarifies what the implementation needs to do before you write it.
+6. "Get it working then add tests" — "working" without a test is an unchecked claim. GREEN requires proof.
+7. "Just a refactor" — refactors change behavior more often than expected. The test catches the drift you didn't intend.
+8. "Existing tests cover this" — run them before your change. If they pass, they don't test the new behavior you're adding.
+9. "Tests in a follow-up" — follow-ups have their own scope and priorities. This behavior ships untested indefinitely.
+10. "It's just a prototype/POC" — prototypes become production faster than you think. The test is the only thing that survives the transition.
+11. "Too hard to write a test for" — hard-to-test code is a design smell. Refactor for testability first, then the test becomes straightforward.
+12. "Watch mode shows it's passing" — watch mode runs existing tests. It says nothing about the new behavior you haven't tested yet.

@@ -1,8 +1,9 @@
 ---
-name: extend
+name: extensions
 description: >
-  Registers agent or skill extensions into framework phases. Validates fit,
-  checks caps, updates .docs/extend/ configuration.
+  Use when: user wants to add a project-specific agent or skill to a pipeline
+  phase (router, diagnose, craft, verify). Validates fit, checks phase caps,
+  updates .docs/extensions/ configuration.
 type: user-invokable
 ---
 
@@ -13,10 +14,10 @@ Receives:
 
 Reads:
 - The agent/skill file
-- `.docs/extend/<phase>.md` (if exists)
+- `.docs/extensions/<phase>.md` (if exists)
 
 Produces:
-- Updated `.docs/extend/<phase>.md`
+- Updated `.docs/extensions/<phase>.md`
 
 ## Procedure
 
@@ -26,13 +27,13 @@ Get agent/skill name and target phase from user.
 
 ### 2. Validate phase
 
-Extendable phases: **router, trace, craft, verify**.
+Extendable phases: **router, diagnose, craft, verify**.
 
 Reject with explanation: sketch, blueprint, retro, explore -- "single-agent or conversational -- no dispatch point for extensions."
 
 ### 3. Validate extension type
 
-- **Agent extensions**: all extendable phases (router, trace, craft, verify).
+- **Agent extensions**: all extendable phases (router, diagnose, craft, verify).
 - **Skill extensions**: craft only. Reject for other phases -- "only craft supports skill extensions because it's the only phase where extensions do work, not just report findings."
 
 ### 4. Locate the file
@@ -51,7 +52,7 @@ If not found, tell user where to create it.
 Does the extension match the phase's expectations?
 
 - **Router extensions**: must return structured output (Key Findings, Relevant Files, Open Questions)
-- **Trace extensions**: must provide investigation findings
+- **Diagnose extensions**: must provide investigation findings
 - **Craft agent extensions**: must return structured findings (fast checks)
 - **Craft skill extensions**: must follow standard skill format
 - **Verify extensions**: must use evidence-based finding format with severity (P0-P3)
@@ -63,7 +64,7 @@ Suggest modifications if format doesn't match.
 | Phase | Framework agents | Extension cap |
 |---|---|---|
 | Router | 2 (code + docs explorer) | 2 |
-| Trace | 0 | 2 |
+| Diagnose | 0 | 2 |
 | Craft | 0 | 2 agents + 2 skills |
 | Verify | 1 (unified code-reviewer) | 3 |
 
@@ -71,7 +72,7 @@ If cap reached: reject, suggest replacing an existing extension.
 
 ### 7. Write extension manifest
 
-Create or update `.docs/extend/<phase>.md`:
+Create or update `.docs/extensions/<phase>.md`:
 
 ```yaml
 ---
@@ -91,7 +92,7 @@ skills:
 
 ## Output
 
-Updated `.docs/extend/<phase>.md`.
+Updated `.docs/extensions/<phase>.md`.
 
 ## Gotchas
 

@@ -36,3 +36,4 @@ No re-exploration on transition. All context carries forward in session.
 - Persist external research to `.docs/research/` -- session context dies, files survive
 - Distinguish codebase evidence from model knowledge from external research
 - No retro for EXPLORE -- research path, not work path
+- REVIEW has its own pipeline and transitions (see yo/SKILL.md)

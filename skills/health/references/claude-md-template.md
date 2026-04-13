@@ -40,9 +40,15 @@ Run before any completion claim, in this order:
 ## Workflow Artifacts
 - All artifacts in `.docs/` (dotdir, invisible to rg/grep by default)
 - YAML frontmatter on all artifacts for grep-first retrieval
-- Work products: `.docs/work/<YYMMDD-slug>/` (sketch, blueprint, retro)
+- Slugs: `YYMMDD-NNN-kebab-topic` (NNN resets daily)
+- Sketches: `.docs/sketches/<slug>.md`
+- Blueprints: `.docs/blueprints/<slug>.md`
+- Retros: `.docs/retros/<slug>.md`
+- Reviews: `.docs/reviews/<slug>.md`
+- Diagnoses: `.docs/diagnoses/<slug>.md`
 - Research: `.docs/research/<topic>.md`
-- Extensions: `.docs/extend/<phase>.md`
+- Health: `.docs/reports/YYMMDD-health.md`
+- Extensions: `.docs/extensions/<phase>.md`
 - Navigation: `.docs/MAP.md`
 
 ## Hard Gates

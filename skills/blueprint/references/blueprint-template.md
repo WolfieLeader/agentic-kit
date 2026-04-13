@@ -6,7 +6,7 @@
 ---
 title: Add notification system           # matches sketch title
 date: 2026-04-11                         # creation date
-source_sketch: 260411-notifications      # slug reference to sketch
+source_sketch: 260411-001-notifications  # slug reference to sketch
 tier: standard                           # standard | deep
 status: draft                            # draft | complete | blocked
 overall_confidence: GREEN                # GREEN | YELLOW | RED

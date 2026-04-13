@@ -1,8 +1,9 @@
 ---
 name: blueprint
 description: >
-  Defines how. Produces blueprint.md with vertical-slice implementation units.
-  Includes 4-check fail-closed review gate with escalation.
+  Use when: sketch is complete for std/deep tier. Defines how via vertical-slice
+  implementation units. Produces blueprint.md with 4-check fail-closed review gate
+  and escalation path.
 phase: blueprint
 type: internal
 ---
@@ -11,10 +12,10 @@ type: internal
 
 Receives:
 - Path to sketch.md
-- Explorer findings from start phase
+- Explorer findings from yo
 
 Reads:
-- `.docs/work/<slug>/sketch.md`
+- `.docs/sketches/<slug>.md`
 - Source code as needed for implementation planning
 - Existing patterns, test infrastructure, project conventions
 
@@ -85,7 +86,7 @@ If total scope is simpler than expected (1-2 units, no durable decisions needed)
 
 Gate: **ARTIFACT-BEFORE-HANDOFF** -- persist to disk before review.
 
-Write to `.docs/work/<slug>/blueprint.md` using references/blueprint-template.md.
+Write to `.docs/blueprints/<slug>.md` using references/blueprint-template.md.
 
 ### 8. Blueprint review gate (fail-closed)
 
@@ -120,7 +121,7 @@ Fix identified issues, re-run all 4 checks. After 3 failures, escalate to user w
 
 ## Output
 
-Produces: `.docs/work/<slug>/blueprint.md`
+Produces: `.docs/blueprints/<slug>.md`
 Gate: blueprint review (4 checks, fail-closed)
 Passes to: craft
 
@@ -143,3 +144,14 @@ Passes to: craft
 - Durable decisions must be complete. Craft subagents cannot make cross-unit decisions.
 - YELLOW/RED confidence units need explicit risk mitigation in their approach section.
 - Downgrade to lightweight is a valid outcome. Not everything needs a full blueprint.
+
+## Rationalization Red Flags
+
+If you catch yourself thinking any of these, STOP and follow the blueprint procedure:
+
+1. "I'll figure out the details during implementation" — that's a placeholder disguised as a plan
+2. "This unit is too small to need test scenarios" — every unit gets at least one. No exceptions.
+3. "The approach section needs code examples to be clear" — describe behavior, not implementation
+4. "I'll just put one big unit" — if it touches 2+ systems, it's 2+ units. Vertical slices.
+5. "The reviewer will catch any issues" — 3 retries max, then you're escalating to the user
+6. "These durable decisions are obvious" — obvious to you means invisible to the craft subagent

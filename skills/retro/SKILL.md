@@ -1,8 +1,9 @@
 ---
 name: retro
 description: >
-  Automatic at end of every BUILD/FIX. Writes retro.md as living document.
-  User tests, provides feedback, agent resolves and updates retro.
+  Use when: verify phase completes. Automatic at end of every BUILD/FIX. Writes
+  retro.md as living document -- user tests, provides feedback, agent resolves
+  and updates. YAML frontmatter feeds /propose pattern detection.
 phase: retro
 type: internal
 ---
@@ -11,12 +12,13 @@ type: internal
 
 Receives:
 - Session context (full conversation history)
-- Sketch.md path (std/deep; omitted for lightweight)
+- Sketch path (std/deep; omitted for lightweight)
 
 Reads:
 - Git diff (all changes in session)
 - Test results (final verification output)
-- Blueprint.md (std/deep, if exists)
+- `.docs/sketches/<slug>.md` (std/deep, if exists)
+- `.docs/blueprints/<slug>.md` (std/deep, if exists)
 - MAP.md (for incremental updates)
 
 ## Procedure
@@ -24,18 +26,18 @@ Reads:
 ### 1. Determine mode
 
 - **BUILD**: new feature or enhancement
-- **FIX**: bug fix (trace -> sketch/craft -> verify -> here)
+- **FIX**: bug fix (diagnose -> sketch/craft -> verify -> here)
 - **Context section**: add for lightweight tier (all types), omit for std/deep (sketch.md covers that context)
 
 ### 2. Gather evidence
 
 - Run `git diff` against session start point. Read output.
 - Read final test results from verify phase.
-- Read sketch.md success criteria (std/deep).
+- Read `.docs/sketches/<slug>.md` success criteria (std/deep).
 
 ### 3. Write initial retro
 
-Write to `.docs/work/<slug>/retro.md` using template (see references/retro-template.md). Include YAML frontmatter.
+Write to `.docs/retros/<slug>.md` using template (see references/retro-template.md). Include YAML frontmatter.
 
 **Frontmatter matters downstream.** Every field feeds `/propose` pattern detection:
 - `module:` + `affected_modules:` — cluster retros by subsystem, detect cross-module pain points
@@ -85,7 +87,7 @@ If session touched new modules, paths, or architectural boundaries:
 
 ## Output
 
-Produces: `.docs/work/<slug>/retro.md`
+Produces: `.docs/retros/<slug>.md`
 Updates: MAP.md (if new modules/paths touched)
 Passes to: done
 

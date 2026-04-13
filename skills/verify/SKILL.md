@@ -1,9 +1,9 @@
 ---
 name: verify
 description: >
-  Single step that scales by tier. Lightweight runs inline checks.
-  Std/deep adds unified code-reviewer agent and extension reviewers.
-  Produces verification evidence and review findings.
+  Use when: craft phase completes. Single step that scales by tier. Lightweight
+  runs inline checks. Std/deep adds unified code-reviewer agent (3-pass) and
+  extension reviewers. Produces verification evidence and review findings.
 phase: verify
 type: internal
 ---
@@ -16,7 +16,7 @@ Receives:
 
 Reads:
 - Test output, build output
-- `.docs/extend/verify.md` for extension reviewers
+- `.docs/extensions/verify.md` for extension reviewers
 - Source code as needed for wiring checks
 
 ## Iron Law of Verification
@@ -55,7 +55,7 @@ All 4 pass -> proceed to retro.
    - New env vars documented?
    - New dependencies in package/config files?
    - DB migrations included if schema changed?
-5. **Sketch/blueprint compliance** -- check sketch.md success criteria against implementation. Verify each blueprint unit's verification criteria met.
+5. **Sketch/blueprint compliance** -- check `.docs/sketches/<slug>.md` success criteria against implementation. Verify each blueprint unit's verification criteria met.
 
 All 5 pass -> proceed to Phase 2.
 
@@ -69,7 +69,7 @@ All 5 pass -> proceed to Phase 2.
 
 Agent returns findings with severity and evidence.
 
-**2. Dispatch extension reviewers** -- if `.docs/extend/verify.md` exists, dispatch domain-specific reviewers (accessibility, performance, API contracts, etc.).
+**2. Dispatch extension reviewers** -- if `.docs/extensions/verify.md` exists, dispatch domain-specific reviewers (accessibility, performance, API contracts, etc.).
 
 **3. Triage findings:**
 
@@ -109,3 +109,14 @@ Passes to: retro
 - Wiring check catches the #1 demo-day bug: feature works in isolation, not connected to app.
 - Review defense is not optional. Blind acceptance causes churn and regressions.
 - Extension reviewers are additive. Core 3-pass review always runs.
+
+## Rationalization Red Flags
+
+If you catch yourself thinking any of these, STOP and follow the verify procedure:
+
+1. "Tests pass so it's done" — tests verify code correctness, not feature correctness. Check wiring.
+2. "The build succeeded, no need for the stub scan" — all 4/5 checks run. No shortcuts.
+3. "This reviewer finding looks right, I'll just fix it" — verify against actual code first. Push back if wrong.
+4. "Great point!" / "You're absolutely right!" — no sycophancy. Evaluate technically.
+5. "I already verified during craft" — fresh verification evidence. Not stale claims from earlier.
+6. "The review found nothing major, skip the defense protocol" — zero-finding halt is a valid outcome. Inventing issues is not.

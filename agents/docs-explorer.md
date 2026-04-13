@@ -22,7 +22,7 @@ Follows framework voice conventions.
 1. **Frontmatter search** -- Grep `.docs/` via YAML frontmatter fields: `module:`, `tags:`, `title:`. Match against search terms.
 2. **Prioritized scan** -- Search order:
    - `.docs/research/` (curated knowledge) -- first
-   - `.docs/work/*/retro.md` (work retrospectives) -- second
+   - `.docs/retros/*.md` (work retrospectives) -- second
    - Remaining `.docs/` subdirectories -- last
 3. **Read matches** -- Open matched files (max 15). Extract prior decisions, tradeoffs, known pitfalls, existing patterns, research on third-party deps.
 4. **Gap detection** -- If knowledge gap found on third-party topic:
@@ -41,7 +41,7 @@ Follows framework voice conventions.
 
 ## Relevant Files
 - .docs/research/topic.md -- [what it covers]
-- .docs/work/slug/retro.md -- [relevant insight]
+- .docs/retros/slug.md -- [relevant insight]
 
 ## Open Questions
 - [knowledge gaps, stale research flagged for update -- max 3]

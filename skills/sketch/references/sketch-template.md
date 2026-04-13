@@ -5,7 +5,7 @@
 ```yaml
 ---
 title: Add notification system           # descriptive title
-date: 2026-04-11                         # creation date
+date: 2026-04-11                         # creation date (from slug)
 type: build                              # build | fix
 tier: standard                           # standard | deep
 status: draft                            # draft | complete
@@ -78,7 +78,7 @@ exact error output or symptom description
 ```
 
 ### Reproduction Steps
-From trace: steps, expected vs actual, environment details.
+From diagnose: steps, expected vs actual, environment details.
 **Reproduction status**: Reproduced / Partial / Not reproduced
 
 ### Root Cause Hypothesis

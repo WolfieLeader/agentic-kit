@@ -1,8 +1,9 @@
 ---
 name: propose
 description: >
-  Aggregates retros, detects recurring patterns, and drafts change proposals.
-  Pattern detection is agent judgment -- look for meaningful clusters.
+  Use when: user wants to review what went well/wrong across recent tasks,
+  find recurring patterns, or identify framework improvements. Aggregates all
+  data points, detects clusters, drafts change proposals. Invoke after several tasks.
 type: user-invokable
 ---
 
@@ -12,65 +13,82 @@ Receives:
 - User request (optional scope filter: module, tag, date range)
 
 Reads:
-- `.docs/work/*/retro.md` (retros in scope)
+- `.docs/retros/*.md` (retros in scope)
+- `.docs/reviews/*.md` (code review findings)
+- `.docs/diagnoses/*.md` (bug investigation findings)
+- `.docs/reports/*-health.md` (health check findings)
+- `.docs/research/*.md` (external knowledge)
 - `.docs/evolve/*-proposals.md` (prior proposals for overlap check)
-- `.docs/extend/` (extension manifests for health check)
 
 Produces:
-- `.docs/evolve/NNN-proposals.md`
+- `.docs/evolve/<slug>-proposals.md`
 
 ## Procedure
 
 ### 1. Scope
 
-Determine which retros to analyze:
+Determine which data points to analyze:
 
 - **Default**: all since last evolve round
 - **User filter**: by module, tag, or date range
-- Grep `.docs/work/*/retro.md` YAML frontmatter for filtering
+- Grep YAML frontmatter for filtering across all data-point directories
 
-### 2. Analyze retros
+### 2. Mine all data points
 
-Read all retros in scope. Grep frontmatter first, then read content of matches:
+Read data points in scope. Grep frontmatter first, then read content of matches:
 
 ```bash
-# Cluster by root cause (FIX retros)
-grep -r "root_cause:" .docs/work/*/retro.md
+# Cluster by root cause (retros + diagnoses)
+grep -r "root_cause:" .docs/{retros,diagnoses}/
 
-# Cluster by module
-grep -r "module:" .docs/work/*/retro.md
+# Cluster by module (all data points)
+grep -r "module:" .docs/{retros,reviews,diagnoses,reports}/
 
 # Cross-module work
-grep -r "affected_modules:" .docs/work/*/retro.md
+grep -r "affected_modules:" .docs/retros/
 
 # Token efficiency
-grep -r "token_effort:" .docs/work/*/retro.md
+grep -r "token_effort:" .docs/retros/
 
 # Outcomes
-grep -r "outcome:" .docs/work/*/retro.md
+grep -r "outcome:" .docs/retros/
+
+# Severity patterns (diagnoses + reviews)
+grep -r "severity:" .docs/diagnoses/
+grep -r "p0_count:\|p1_count:" .docs/reviews/
 ```
 
 Extract from content:
-- Root cause categories and frequency
-- Modules involved (including cross-module via `affected_modules:`)
-- "What went wrong" themes
-- Action items (completed and outstanding)
-- Token effort patterns per tier and module
+- Root cause categories and frequency (retros + diagnoses)
+- Modules involved (all data points)
+- "What went wrong" themes (retros)
+- Review finding patterns (reviews)
+- Bug classification patterns (diagnoses)
+- Health trends across reports (reports)
+- Token effort patterns per tier and module (retros)
 
 ### 3. Detect patterns
 
 Agent judgment -- look for meaningful clusters, not mechanical counting.
 
 - Group by root cause category -- flag 3+ occurrences
-- Same module appearing in multiple retros
+- Same module appearing in multiple retros/reviews/diagnoses
 - Recurring "what went wrong" themes across different modules
-- Clusters of related issues
+- Review findings that repeat across reviews (systemic code issues)
+- Bug classifications that cluster (e.g., many "environmental" = CI problem)
 
 ### 4. Overlap check
 
-Grep `.docs/evolve/*-proposals.md` for prior proposals. Avoid duplicates. If a prior proposal covers the same ground, reference it instead of re-proposing.
+Grep `.docs/evolve/*-proposals.md` for prior proposals. Avoid duplicates.
+If a prior proposal covers the same ground, reference it instead of re-proposing.
 
-### 5. Draft proposals
+### 5. Read health report
+
+If `.docs/reports/` contains a recent health report, read it. Incorporate
+WARN findings as proposal candidates (stale research, orphan artifacts,
+extension health issues, CLAUDE.md gaps).
+
+### 6. Draft proposals
 
 Categorize each proposal by target:
 
@@ -89,53 +107,39 @@ Per-proposal format:
 ```markdown
 ### Proposal N: [title]
 - **Target:** [category]
-- **Evidence:** [which retros, what pattern]
+- **Evidence:** [which data points, what pattern]
 - **Description:** [what to change and why]
 - **Acceptance criteria:** [how to know it's done]
 - **Status:** proposed
 ```
 
-### 6. Check extension health
+### 7. Write proposals file
 
-Review `.docs/extend/` manifests against analyzed retros. Flag extensions with zero findings across 3+ retros -- candidates for removal (unused extensions waste tokens every run).
+Generate slug: `YYMMDD-NNN-kebab-topic` (same convention as all artifacts).
+Scan `.docs/evolve/` for highest NNN today, increment.
 
-### 7. Lint research docs
-
-Scan `.docs/research/` for health issues:
-- **Stale**: `date_updated` older than 90 days -- flag for review or refresh
-- **Orphaned**: no retro or sketch references the doc (grep `module:` and `tags:` against work artifacts) -- candidate for archival
-- **Contradictions**: multiple research docs covering overlapping topics with conflicting claims -- flag for resolution
-
-### 8. Detect token efficiency patterns
-
-Grep retro frontmatter for `token_effort:` values. Flag:
-- Lightweight tasks consistently rated `high` -- routing problem (should be standard)
-- Specific modules with disproportionate `high` ratings -- complexity signal
-- `high` effort correlated with specific root cause categories -- systemic issue
-
-### 9. Write proposals file
-
-Determine next NNN: scan `.docs/evolve/` for highest existing number + 1.
-
-Write to `.docs/evolve/NNN-proposals.md`:
+Write to `.docs/evolve/<slug>-proposals.md`:
 
 ```yaml
 ---
-title: Evolve Proposals Round [N]
+title: Evolve Proposals — [topic]
 date: [YYYY-MM-DD]
 retros_analyzed: [list of slugs]
+reviews_analyzed: [list of slugs]
+diagnoses_analyzed: [list of slugs]
 status: draft
 ---
 ```
 
 ## Output
 
-`.docs/evolve/NNN-proposals.md` with all proposals and extension health findings.
+`.docs/evolve/<slug>-proposals.md` with all proposals.
 
 ## Gotchas
 
 - No minimum retro count -- user invokes when ready.
 - Pattern detection is agent judgment, not algorithm. Meaningful clusters matter, not string matches.
 - Always check for prior proposals to avoid duplicates.
-- Extension health check flags extensions with zero findings across 3+ retros as removal candidates.
+- Mine ALL data-point directories, not just retros.
 - 3+ occurrences of a root cause category is a signal, not a threshold. Use judgment.
+- Health findings are inputs, not re-run. `/health` does the diagnostics; `/propose` reads the results.

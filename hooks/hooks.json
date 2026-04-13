@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh hooks/scripts/no-placeholders.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

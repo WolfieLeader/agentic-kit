@@ -1,8 +1,9 @@
 ---
 name: craft
 description: >
-  Implements with TDD. Two modes: lightweight (inline, no subagent) and
-  std/deep (fresh opus subagent per unit, sequential). Produces code + tests.
+  Use when: pipeline reaches implementation phase. Implements with TDD via
+  RED-GREEN-REFACTOR. Lightweight runs inline; std/deep dispatches fresh opus
+  subagent per unit sequentially. Produces code + tests.
 phase: craft
 type: internal
 ---
@@ -10,12 +11,12 @@ type: internal
 ## Context
 
 Receives:
-- Lightweight: dispatch summary from start
+- Lightweight: dispatch summary from yo
 - Std/deep: blueprint.md path + explorer findings
 
 Reads:
-- `.docs/work/<slug>/blueprint.md` (std/deep)
-- `.docs/extend/craft.md` for extension agents/hooks
+- `.docs/blueprints/<slug>.md` (std/deep)
+- `.docs/extensions/craft.md` for extension agents/hooks
 - Source code, test files, project conventions
 
 ## Procedure -- Lightweight
@@ -62,7 +63,7 @@ For each unit in execution order:
 | BLOCKED | Re-dispatch with more context / break down further / escalate to user |
 | NEEDS_CONTEXT | Provide requested context, re-dispatch |
 
-**D. Run extensions** (if `.docs/extend/craft.md` exists):
+**D. Run extensions** (if `.docs/extensions/craft.md` exists):
 - Agent extensions first (lint, style, patterns)
 - Skill extensions second (domain workflows on clean code)
 
@@ -101,20 +102,8 @@ Reset: breaker resets when moving to a different issue/unit.
 
 ## Rationalization Red Flags
 
-If you catch yourself thinking any of these, STOP and follow the TDD cycle:
-
-1. "I'll write the test after"
-2. "Too simple to test"
-3. "Just manually verify"
-4. "The test is obvious"
-5. "Need to see implementation first"
-6. "Get it working then add tests"
-7. "Just a refactor"
-8. "Existing tests cover this"
-9. "Tests in a follow-up"
-10. "It's just a prototype/POC"
-11. "Too hard to write a test for"
-12. "Watch mode shows it's passing"
+See references/tdd-guardrails.md § 12 Rationalization Red Flags. If any cross your
+mind, STOP and write the test.
 
 ## Output
 
@@ -130,4 +119,4 @@ Passes to: verify
 - Context isolation: subagents do NOT see the full blueprint. They get their unit only.
 - Durable decisions are authoritative constraints, not suggestions.
 - Exception protocol is for genuinely non-testable changes. Logic is always testable.
-- Extensions in `.docs/extend/craft.md` are optional. Skip gracefully if file missing.
+- Extensions in `.docs/extensions/craft.md` are optional. Skip gracefully if file missing.

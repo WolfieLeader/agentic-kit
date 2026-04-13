@@ -1,8 +1,9 @@
 ---
 name: evolve
 description: >
-  Execute accepted proposals from a propose round. Edits skills, CLAUDE.md,
-  research docs, code, and tests. Logs changes and updates changelog.
+  Use when: proposals from /propose have been reviewed and accepted by the team.
+  Executes accepted proposals -- edits skills, CLAUDE.md, research docs, code,
+  and tests. Logs changes to CHANGELOG. The framework improves itself.
 type: user-invokable
 ---
 
@@ -12,19 +13,19 @@ Receives:
 - Proposals file path (or uses most recent)
 
 Reads:
-- `.docs/evolve/NNN-proposals.md` (items with `status: accepted`)
+- `.docs/evolve/<slug>-proposals.md` (items with `status: accepted`)
 - Files targeted by each proposal
-- `.docs/extend/` (if proposals target extension changes)
+- `.docs/extensions/` (if proposals target extension changes)
 
 Produces:
-- `.docs/evolve/NNN-evolve.md` (execution log)
+- `.docs/evolve/<slug>-evolve.md` (execution log)
 - `.docs/CHANGELOG.md` entry
 
 ## Procedure
 
 ### 1. Load proposals
 
-Read the specified proposals file. If no path given, use most recent `.docs/evolve/*-proposals.md`. Identify `status: accepted` items. If none, stop and inform user.
+Read the specified proposals file. If no path given, use most recent `.docs/evolve/*-proposals.md` by date prefix. Identify `status: accepted` items. If none, stop and inform user.
 
 ### 2. Execute in order
 
@@ -54,16 +55,16 @@ Change executed items from `accepted` to `completed`. Leave `rejected` and `defe
 
 ### 5. Write evolve log
 
-Create `.docs/evolve/NNN-evolve.md` (NNN matches source proposals). YAML frontmatter with `title`, `date`, `source_proposals`, `changes_made` list. Body has per-change detail: target, files modified, what changed, acceptance criteria met.
+Create `.docs/evolve/<slug>-evolve.md` (slug matches source proposals). YAML frontmatter with `title`, `date`, `source_proposals`, `changes_made` list. Body has per-change detail: target, files modified, what changed, acceptance criteria met.
 
 ### 6. Append CHANGELOG
 
 Add to `.docs/CHANGELOG.md` (create if missing):
 
 ```markdown
-## Evolve #N -- YYYY-MM-DD
-Source: proposals #NNN
-Retros analyzed: slug1, slug2, slug3
+## Evolve [slug] -- YYYY-MM-DD
+Source: [proposals slug]
+Data points analyzed: slug1, slug2, slug3
 
 Changes:
 - [target] Description of change
@@ -75,12 +76,12 @@ If `code-pattern` or `test-gap` proposals executed, run the test suite. Fail: re
 
 ## Output
 
-Modified target files, updated proposals file (completed statuses), `.docs/evolve/NNN-evolve.md`, `.docs/CHANGELOG.md` entry.
+Modified target files, updated proposals file (completed statuses), `.docs/evolve/<slug>-evolve.md`, `.docs/CHANGELOG.md` entry.
 
 ## Gotchas
 
 - Only execute `accepted` items. Never `proposed` or `deferred`.
-- Evolve log NNN matches source proposals NNN.
+- Evolve log slug matches source proposals slug.
 - CHANGELOG is append-only. Never edit prior entries.
 - Research doc deletion is recoverable via git. Always log deletion rationale.
 - Test failures trigger revert + blocked status, not completed.

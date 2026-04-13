@@ -6,7 +6,7 @@
 ---
 title: Add notification system           # descriptive title
 date_completed: 2026-04-11              # updated as living doc
-source_sketch: 260411-notifications      # omit for lightweight
+source_sketch: 260411-001-notifications  # omit for lightweight
 type: build                              # build | fix
 tier: lightweight                        # lightweight | standard | deep
 outcome: success                         # success | partial | failed
@@ -60,7 +60,7 @@ What was reported, what investigation found, approach taken. 2-3 sentences.
 - What was fixed; (if workaround/partial) what remains and why
 
 ### Root Cause
-**Initial hypothesis**: (from trace) | **Actual root cause**: (from fix) | **Accuracy**: correct | partial | wrong
+**Initial hypothesis**: (from diagnose) | **Actual root cause**: (from fix) | **Accuracy**: correct | partial | wrong
 
 ### What Didn't Work
 | Attempt | What was tried | Why it failed |

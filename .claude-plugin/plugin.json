@@ -1,11 +1,11 @@
 {
   "name": "agentic-kit",
-  "version": "0.1.0",
-  "description": "AI-driven development framework — structured brainstorming, planning, and implementation workflows",
+  "version": "0.3.0",
+  "description": "Structured development workflows with right-sized ceremony and compound learning. One entry point, four workflows (BUILD/FIX/EXPLORE/REVIEW), persistent knowledge graph via YAML frontmatter.",
   "author": {
     "name": "WolfieLeader"
   },
   "repository": "https://github.com/WolfieLeader/agentic-kit",
   "license": "MIT",
-  "keywords": ["brainstorming", "planning", "tdd", "workflows", "development"]
+  "keywords": ["development", "tdd", "workflows", "planning", "code-review", "retrospectives"]
 }

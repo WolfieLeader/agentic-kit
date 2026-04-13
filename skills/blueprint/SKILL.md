@@ -11,11 +11,13 @@ type: internal
 ## Context
 
 Receives:
+
 - Path to sketch.md
 - Explorer findings from yo
 
 Reads:
-- `.docs/sketches/<slug>.md`
+
+- `wiki/sketches/<slug>.md`
 - Source code as needed for implementation planning
 - Existing patterns, test infrastructure, project conventions
 
@@ -24,6 +26,7 @@ Reads:
 ### 1. Read sketch and verify understanding
 
 Read sketch.md completely. Verify:
+
 - Selected approach is clear
 - Success criteria are testable
 - Constraints and non-goals are understood
@@ -34,6 +37,7 @@ Read sketch.md completely. Verify:
 Gate: **DESIGN-THEN-CODE** -- full blueprint before any implementation.
 
 Decompose selected approach into vertical slices. Each unit must be:
+
 - Independently testable end-to-end
 - Deliverable in a single craft subagent session
 - Small enough to reason about completely
@@ -44,17 +48,18 @@ Vertical slices, not horizontal layers. "User can reset password via email" (tou
 
 Per unit, specify:
 
-| Field | Content |
-|---|---|
-| Goal | Behavioral description (what changes for user/system) |
-| Dependencies | Other units this depends on (DAG -- no circular deps) |
-| Confidence | GREEN (clear path) / YELLOW (some unknowns) / RED (significant unknowns) |
-| Affected systems | Files, modules, services touched |
-| Approach | Behavioral description of HOW, not code |
-| Test scenarios | Ordered priority list -- craft processes one-at-a-time |
-| Verification criteria | What "done" looks like for this unit |
+| Field                 | Content                                                                  |
+| --------------------- | ------------------------------------------------------------------------ |
+| Goal                  | Behavioral description (what changes for user/system)                    |
+| Dependencies          | Other units this depends on (DAG -- no circular deps)                    |
+| Confidence            | GREEN (clear path) / YELLOW (some unknowns) / RED (significant unknowns) |
+| Affected systems      | Files, modules, services touched                                         |
+| Approach              | Behavioral description of HOW, not code                                  |
+| Test scenarios        | Ordered priority list -- craft processes one-at-a-time                   |
+| Verification criteria | What "done" looks like for this unit                                     |
 
 Hard constraints:
+
 - Dependencies must form a DAG. No circular dependencies.
 - Every unit must have at least one test scenario.
 - No code in approach. Describe behavior and strategy, not implementation.
@@ -63,6 +68,7 @@ Hard constraints:
 ### 4. Extract durable decisions
 
 Top-level section for cross-unit decisions that craft subagents need:
+
 - API routes / endpoints
 - DB schema changes
 - Shared types / interfaces
@@ -86,28 +92,32 @@ If total scope is simpler than expected (1-2 units, no durable decisions needed)
 
 Gate: **ARTIFACT-BEFORE-HANDOFF** -- persist to disk before review.
 
-Write to `.docs/blueprints/<slug>.md` using references/blueprint-template.md.
+Write to `wiki/blueprints/<slug>.md` using references/blueprint-template.md.
 
 ### 8. Blueprint review gate (fail-closed)
 
 Four checks. ALL must pass. Max 3 retry cycles.
 
 **Check 1 -- Dependency coherence (inline)**
+
 - No circular dependencies
 - No missing dependencies (unit references something not defined)
 - Execution order respects DAG
 
 **Check 2 -- Completeness (blueprint-reviewer agent)**
+
 - Dispatch blueprint-reviewer subagent with sketch.md + blueprint.md
 - Reviewer checks: coherence, feasibility, scope coverage
 - Agent returns: PASS / FAIL with specific findings
-- **Orchestrator defense (inline):** evaluate each finding against sketch context and explorer findings. Classify: valid → accept, false positive → reject with reasoning. Log rejections for retro.
+- **Orchestrator defense (inline):** evaluate each finding against sketch context and the persisted exploration (`wiki/research/<slug>-exploration.md`). Classify: valid → accept, false positive → reject with reasoning. Log rejections for retro.
 
 **Check 3 -- No placeholders (inline)**
+
 - Hard ban on: TBD, TODO, FIXME, HACK, XXX, "to be determined", "placeholder", "not implemented", "stub", "will decide later". Any match = FAIL.
 - Soft ban (flag + replace): "appropriate", "relevant", "necessary", "proper", "handle accordingly", "standard", "as described above". Each must be replaced with the specific thing meant.
 
 **Check 4 -- Testability (inline)**
+
 - Every unit has at least one test scenario
 - Test scenarios are specific (not "test that it works")
 - Verification criteria are observable/measurable
@@ -115,13 +125,14 @@ Four checks. ALL must pass. Max 3 retry cycles.
 ### 9. Retry and escalation
 
 Fix identified issues, re-run all 4 checks. After 3 failures, escalate to user with:
+
 - Which checks failed and what was attempted
 - Specific blockers preventing resolution
 - Options: (a) fix with user guidance, (b) restart from sketch with blueprint reviewer findings as input
 
 ## Output
 
-Produces: `.docs/blueprints/<slug>.md`
+Produces: `wiki/blueprints/<slug>.md`
 Gate: blueprint review (4 checks, fail-closed)
 Passes to: craft
 

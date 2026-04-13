@@ -41,24 +41,24 @@ The router classifies your task, scales ceremony to scope, and runs the right pi
 
 **User-facing:**
 
-| Skill | Purpose |
-|-------|---------|
-| `/yo` | Universal entry point. Routes to BUILD, FIX, EXPLORE, or REVIEW. |
-| `/health` | Project diagnostic and onboarding. Checks .docs/ health, initializes new projects. |
-| `/extensions` | Add project-specific agents or skills to pipeline phases. |
-| `/propose` | Mine all data points for patterns, draft change proposals. |
-| `/evolve` | Execute accepted proposals. The framework improves. |
+| Skill         | Purpose                                                                           |
+| ------------- | --------------------------------------------------------------------------------- |
+| `/yo`         | Universal entry point. Routes to BUILD, FIX, EXPLORE, or REVIEW.                  |
+| `/health`     | Project diagnostic and onboarding. Checks wiki/ health, initializes new projects. |
+| `/extensions` | Add project-specific agents or skills to pipeline phases.                         |
+| `/propose`    | Mine all data points for patterns, draft change proposals.                        |
+| `/evolve`     | Execute accepted proposals. The framework improves.                               |
 
 **Pipeline phases** (invoked by `/yo`, not directly): `diagnose` → `sketch` → `blueprint` → `craft` → `verify` → `retro`
 
 ## Agents
 
-| Agent | Model | Role |
-|-------|-------|------|
-| `code-explorer` | Sonnet | Scans source code, patterns, dependencies, git history |
-| `docs-explorer` | Sonnet | Searches prior work, research docs, external sources |
+| Agent                | Model  | Role                                                   |
+| -------------------- | ------ | ------------------------------------------------------ |
+| `code-explorer`      | Sonnet | Scans source code, patterns, dependencies, git history |
+| `docs-explorer`      | Sonnet | Searches prior work, research docs, external sources   |
 | `blueprint-reviewer` | Sonnet | Validates blueprints for coherence, feasibility, scope |
-| `code-reviewer` | Opus | 3-pass review: correctness, testing, maintainability |
+| `code-reviewer`      | Opus   | 3-pass review: correctness, testing, maintainability   |
 
 ## Key Design Decisions
 
@@ -81,7 +81,7 @@ docs/                — Framework design documentation
 **Per-project artifacts** (created by the framework at runtime):
 
 ```
-.docs/
+wiki/
   sketches/          — What/why captures (std/deep builds)
   blueprints/        — How — implementation units
   retros/            — Reflections and learnings (data point)

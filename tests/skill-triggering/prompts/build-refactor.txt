@@ -1,1 +1,0 @@
-Refactor the database layer to use the repository pattern. Right now all the SQL queries are scattered across the route handlers and it's getting hard to maintain.

@@ -1,1 +1,0 @@
-The login page is crashing when users try to refresh their JWT token. Getting a 500 error on POST /api/auth/refresh — looks like it started after yesterday's deploy.

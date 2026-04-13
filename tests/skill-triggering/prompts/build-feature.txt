@@ -1,1 +1,0 @@
-Add a notification system that sends emails when users complete onboarding. We need to integrate with SendGrid for delivery and store notification preferences in the user profile.

@@ -35,16 +35,17 @@ Agent(
 
 ## Agent Type Selection
 
-| Agent file | subagent_type | Why |
-|---|---|---|
-| agents/code-explorer.md | `"general-purpose"` | Needs Bash, Read, Grep, git |
-| agents/docs-explorer.md | `"general-purpose"` | Needs Read, Grep for .docs/ |
-| agents/blueprint-reviewer.md | `"general-purpose"` | Needs Read for source files |
-| agents/code-reviewer.md | `"general-purpose"` | Needs Read, Grep, 25-file budget |
+| Agent file                   | subagent_type       | Why                              |
+| ---------------------------- | ------------------- | -------------------------------- |
+| agents/code-explorer.md      | `"general-purpose"` | Needs Bash, Read, Grep, git      |
+| agents/docs-explorer.md      | `"general-purpose"` | Needs Read, Grep for wiki/       |
+| agents/blueprint-reviewer.md | `"general-purpose"` | Needs Read for source files      |
+| agents/code-reviewer.md      | `"general-purpose"` | Needs Read, Grep, 25-file budget |
 
 All framework agents use `"general-purpose"` because they need full tool access.
 
 **Do NOT use:**
+
 - `"Explore"` — built-in fast agent, grep/glob only, no Bash/Read, no custom instructions
 - `"feature-dev:code-explorer"` — marketplace plugin, different output format
 
@@ -53,12 +54,12 @@ All framework agents use `"general-purpose"` because they need full tool access.
 Each agent file has an `## Inputs` section defining what it expects. Map your
 dispatch context to those fields:
 
-| Agent | Required inputs |
-|---|---|
-| code-explorer | `task_summary`, `search_terms`, `scope` (optional) |
-| docs-explorer | `task_summary`, `search_terms`, `topic` |
+| Agent              | Required inputs                                                       |
+| ------------------ | --------------------------------------------------------------------- |
+| code-explorer      | `task_summary`, `search_terms`, `scope` (optional)                    |
+| docs-explorer      | `task_summary`, `search_terms`, `topic`                               |
 | blueprint-reviewer | `blueprint` (path), `sketch` (path), `exploration_results` (optional) |
-| code-reviewer | `diff`, `sketch` (optional), `blueprint` (optional) |
+| code-reviewer      | `diff`, `sketch` (optional), `blueprint` (optional)                   |
 
 ## Parallel vs Sequential
 
@@ -69,7 +70,7 @@ dispatch context to those fields:
 ## Extension Agents
 
 Extension agents follow the same pattern. Read the extension manifest
-(`.docs/extensions/<phase>.md`), locate each agent file, dispatch using the
+(`wiki/extensions/<phase>.md`), locate each agent file, dispatch using the
 same compose-and-call pattern. Extension agents have the same output contract
 as their phase requires (see `extensions/references/registry.md`).
 

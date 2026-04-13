@@ -1,6 +1,6 @@
 {
   "name": "agentic-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Structured development workflows with right-sized ceremony and compound learning. One entry point, four workflows (BUILD/FIX/EXPLORE/REVIEW), persistent knowledge graph via YAML frontmatter.",
   "author": {
     "name": "WolfieLeader"

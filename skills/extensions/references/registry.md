@@ -16,6 +16,7 @@ agent .md instructions — not the built-in `"Explore"` or the marketplace
 **Output contract:** Key Findings, Relevant Files, Open Questions.
 
 **Examples:**
+
 - **infra-explorer** — Scan Terraform/Docker/CI configs for deployment context
 - **api-explorer** — Trace API contracts (OpenAPI specs, GraphQL schemas, Postman collections)
 - **dependency-explorer** — Analyze dependency graph, flag outdated/vulnerable packages
@@ -29,6 +30,7 @@ Dispatch during diagnose step 5, before routing decision.
 **Output contract:** Investigation findings with classification support.
 
 **Examples:**
+
 - **perf-investigator** — Profile hot paths, check for N+1 queries, measure response times
 - **env-investigator** — Check environment parity (local vs CI vs production configs)
 
@@ -42,6 +44,7 @@ Run after each craft unit completes (step D).
 **Skill output contract:** Standard skill format (procedure + output).
 
 **Examples:**
+
 - **lint-agent** — Run project linter, report violations
 - **i18n-agent** — Check for hardcoded strings, missing translation keys
 - **migration-skill** — Generate DB migration files for schema changes
@@ -56,11 +59,13 @@ Dispatch during verify Phase 2, alongside unified code-reviewer.
 **Output contract:** Evidence-based findings with severity (P0-P3).
 
 **Reference checklists available:**
+
 - `references/security-checklist.md` — OWASP, auth, injection, data protection
 - `references/performance-checklist.md` — DB, API, frontend, general
 - `references/accessibility-checklist.md` — Keyboard, ARIA, forms, visual
 
 **Examples:**
+
 - **security-reviewer** — OWASP top 10, auth bypass, data exposure (use security-checklist.md)
 - **perf-reviewer** — Query plans, bundle size, caching strategy (use performance-checklist.md)
 - **a11y-reviewer** — WCAG 2.1 AA compliance, keyboard nav, ARIA (use accessibility-checklist.md)
@@ -70,7 +75,7 @@ Dispatch during verify Phase 2, alongside unified code-reviewer.
 
 1. Write the agent/skill file in `.claude/agents/` or `.claude/skills/`
 2. Run `/extensions` with the agent/skill name and target phase
-3. The skill validates fit, checks caps, and registers in `.docs/extensions/<phase>.md`
+3. The skill validates fit, checks caps, and registers in `wiki/extensions/<phase>.md`
 
 Extensions are always-on once registered. No per-task toggling.
 Lightweight craft skips extensions entirely.

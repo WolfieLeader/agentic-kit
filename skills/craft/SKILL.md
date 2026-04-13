@@ -11,12 +11,15 @@ type: internal
 ## Context
 
 Receives:
+
 - Lightweight: dispatch summary from yo
-- Std/deep: blueprint.md path + explorer findings
+- Std/deep: blueprint.md path + exploration file path
+  (`wiki/research/<slug>-exploration.md`, written by yo step 15)
 
 Reads:
-- `.docs/blueprints/<slug>.md` (std/deep)
-- `.docs/extensions/craft.md` for extension agents/hooks
+
+- `wiki/blueprints/<slug>.md` (std/deep)
+- `wiki/extensions/craft.md` for extension agents/hooks
 - Source code, test files, project conventions
 
 ## Procedure -- Lightweight
@@ -44,14 +47,18 @@ Read blueprint.md. Extract unit list with execution order, durable decisions, pe
 For each unit in execution order:
 
 **A. Construct context bundle:**
+
 - Unit goal, approach, test scenarios, verification criteria
 - Relevant durable decisions (only those this unit needs)
-- Relevant explorer findings for affected systems
+- Relevant explorer findings extracted from
+  `wiki/research/<slug>-exploration.md` for this unit's affected systems
+  (grep the file, extract the scoped section -- don't pass the whole thing)
 - Project conventions (test framework, file structure, naming)
 
 **B. Dispatch fresh opus subagent:**
+
 - Subagent gets context bundle only. No full blueprint (**context scoping** —
-  the subagent has filesystem access and *could* read more, but scoping its
+  the subagent has filesystem access and _could_ read more, but scoping its
   prompt to one unit keeps it focused and prevents context overload).
 - Subagent follows TDD cycle (same as lightweight steps 2-6).
 - Process test scenarios one-at-a-time. Never batch-generate tests.
@@ -59,17 +66,19 @@ For each unit in execution order:
 
 **C. Handle return:**
 
-| Status | Action |
-|---|---|
-| DONE | Mark unit complete, proceed to next |
-| BLOCKED | Re-dispatch with more context / break down further / escalate to user |
-| NEEDS_CONTEXT | Provide requested context, re-dispatch |
+| Status        | Action                                                                |
+| ------------- | --------------------------------------------------------------------- |
+| DONE          | Mark unit complete, proceed to next                                   |
+| BLOCKED       | Re-dispatch with more context / break down further / escalate to user |
+| NEEDS_CONTEXT | Provide requested context, re-dispatch                                |
 
-**D. Run extensions** (if `.docs/extensions/craft.md` exists):
+**D. Run extensions** (if `wiki/extensions/craft.md` exists):
+
 - Agent extensions first (lint, style, patterns)
 - Skill extensions second (domain workflows on clean code)
 
 **E. Mini-review (inline by orchestrator):**
+
 - Tests pass (run and read output)
 - No stubs or placeholder code
 - Implementation matches blueprint unit spec
@@ -78,6 +87,7 @@ For each unit in execution order:
 **F. Integration check (unit 2+):** Run full test suite to catch cases where a unit breaks prior work before more units build on broken foundation.
 
 **G. Progress tracker:**
+
 ```
 [x] Unit 1: <name> -- DONE
 [x] Unit 2: <name> -- DONE
@@ -119,8 +129,8 @@ Passes to: verify
 
 ## Gotchas
 
-- Context scoping: subagents get their unit only in the prompt. They *can* read the full blueprint from disk but shouldn't need to — if a unit needs cross-unit context, the durable decisions section or the context bundle should cover it.
+- Context scoping: subagents get their unit only in the prompt. They _can_ read the full blueprint from disk but shouldn't need to — if a unit needs cross-unit context, the durable decisions section or the context bundle should cover it.
 - Durable decisions are authoritative constraints, not suggestions.
 - Exception protocol is for genuinely non-testable changes. Logic is always testable.
-- Extensions in `.docs/extensions/craft.md` are optional. Skip gracefully if file missing.
+- Extensions in `wiki/extensions/craft.md` are optional. Skip gracefully if file missing.
 - Default is opus. Sonnet is the exception, not the optimization. Downgrade only for trivially mechanical units (rename, color change, single-line config). If you're debating whether a unit is "mechanical enough," it isn't — use opus.

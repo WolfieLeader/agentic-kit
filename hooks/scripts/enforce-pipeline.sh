@@ -25,15 +25,15 @@ CWD=$(echo "$INPUT" | grep -o '"cwd"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 
 # --- Skip non-source files ---
 # Artifacts, config, test files, framework files — all allowed freely.
 case "$FILE_PATH" in
-  */.docs/*|*/.claude/*|*/hooks/*|*/docs/*|*/agents/*|*/skills/*|*/references/*) exit 0 ;;
+  */wiki/*|*/.claude/*|*/hooks/*|*/docs/*|*/agents/*|*/skills/*|*/references/*) exit 0 ;;
   *.md|*.json|*.yaml|*.yml|*.toml|*.lock|*.env*|*.txt|*.cfg|*.ini|*.conf) exit 0 ;;
   *.test.*|*.spec.*|*_test.*|*/test_*) exit 0 ;;
   */__tests__/*|*/test/*|*/tests/*|*/spec/*|*/fixtures/*) exit 0 ;;
 esac
 
-SKETCHES_DIR="$CWD/.docs/sketches"
-BLUEPRINTS_DIR="$CWD/.docs/blueprints"
-DIAGNOSES_DIR="$CWD/.docs/diagnoses"
+SKETCHES_DIR="$CWD/wiki/sketches"
+BLUEPRINTS_DIR="$CWD/wiki/blueprints"
+DIAGNOSES_DIR="$CWD/wiki/diagnoses"
 
 # --- DESIGN-THEN-CODE ---
 # Draft blueprint whose slug has no matching sketch = skipped design phase.

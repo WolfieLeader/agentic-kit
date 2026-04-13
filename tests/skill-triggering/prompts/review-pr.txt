@@ -1,1 +1,0 @@
-Review PR #247 — it adds rate limiting to the API endpoints. Check if the implementation is correct and if there are any bypass vectors.

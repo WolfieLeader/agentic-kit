@@ -1,27 +1,33 @@
 ---
 name: propose
 description: >
-  Use when: user wants to review what went well/wrong across recent tasks,
-  find recurring patterns, or identify framework improvements. Aggregates all
-  data points, detects clusters, drafts change proposals. Invoke after several tasks.
-type: user-invokable
+  Retrospective pattern synthesis into framework change proposals. Invoke ONLY
+  when the user explicitly types /propose, or explicitly requests "draft
+  proposals" / "synthesize retros" / "find framework patterns". Do NOT auto-
+  invoke after individual retros -- the user decides when enough data has
+  accumulated to warrant synthesis. Aggregates retros/diagnoses, detects
+  clusters, drafts change proposals for /evolve to apply.
+type: user-invocable
 ---
 
 ## Context
 
 Receives:
+
 - User request (optional scope filter: module, tag, date range)
 
 Reads:
-- `.docs/retros/*.md` (retros in scope)
-- `.docs/reviews/*.md` (code review findings)
-- `.docs/diagnoses/*.md` (bug investigation findings)
-- `.docs/reports/*-health.md` (health check findings)
-- `.docs/research/*.md` (external knowledge)
-- `.docs/evolve/*-proposals.md` (prior proposals for overlap check)
+
+- `wiki/retros/*.md` (retros in scope)
+- `wiki/reviews/*.md` (code review findings)
+- `wiki/diagnoses/*.md` (bug investigation findings)
+- `wiki/reports/*-health.md` (health check findings)
+- `wiki/research/*.md` (external knowledge)
+- `wiki/evolve/*-proposals.md` (prior proposals for overlap check)
 
 Produces:
-- `.docs/evolve/<slug>-proposals.md`
+
+- `wiki/evolve/<slug>-proposals.md`
 
 ## Procedure
 
@@ -39,26 +45,27 @@ Read data points in scope. Grep frontmatter first, then read content of matches:
 
 ```bash
 # Cluster by root cause (retros + diagnoses)
-grep -r "root_cause:" .docs/{retros,diagnoses}/
+grep -r "root_cause:" wiki/{retros,diagnoses}/
 
 # Cluster by module (all data points)
-grep -r "module:" .docs/{retros,reviews,diagnoses,reports}/
+grep -r "module:" wiki/{retros,reviews,diagnoses,reports}/
 
 # Cross-module work
-grep -r "affected_modules:" .docs/retros/
+grep -r "affected_modules:" wiki/retros/
 
 # Token efficiency
-grep -r "token_effort:" .docs/retros/
+grep -r "token_effort:" wiki/retros/
 
 # Outcomes
-grep -r "outcome:" .docs/retros/
+grep -r "outcome:" wiki/retros/
 
 # Severity patterns (diagnoses + reviews)
-grep -r "severity:" .docs/diagnoses/
-grep -r "p0_count:\|p1_count:" .docs/reviews/
+grep -r "severity:" wiki/diagnoses/
+grep -r "p0_count:\|p1_count:" wiki/reviews/
 ```
 
 Extract from content:
+
 - Root cause categories and frequency (retros + diagnoses)
 - Modules involved (all data points)
 - "What went wrong" themes (retros)
@@ -79,7 +86,7 @@ Agent judgment -- look for meaningful clusters, not mechanical counting.
 
 ### 4. Overlap and effectiveness check
 
-Grep `.docs/evolve/*-proposals.md` for prior proposals. For each prior proposal
+Grep `wiki/evolve/*-proposals.md` for prior proposals. For each prior proposal
 with `status: completed`:
 
 - **Overlap**: if a new pattern matches a prior proposal's target, don't
@@ -90,6 +97,7 @@ with `status: completed`:
   that didn't actually resolve the underlying problem.
 
 Flag format in the proposals file:
+
 ```markdown
 > ⚠ Pattern regression: [root_cause] was addressed in [evolve-slug] on [date]
 > but reappears in [retro-slugs]. Prior fix may be insufficient.
@@ -97,7 +105,7 @@ Flag format in the proposals file:
 
 ### 5. Read health report
 
-If `.docs/reports/` contains a recent health report, read it. Incorporate
+If `wiki/reports/` contains a recent health report, read it. Incorporate
 WARN findings as proposal candidates (stale research, orphan artifacts,
 extension health issues, CLAUDE.md gaps).
 
@@ -105,20 +113,21 @@ extension health issues, CLAUDE.md gaps).
 
 Categorize each proposal by target:
 
-| Target | Example |
-|---|---|
-| skill-change | "Sketch should ask about cross-platform impact" |
-| claude-md-change | "Add convention about error handling in API layer" |
-| code-pattern | "Extract shared validation into middleware" |
-| test-gap | "Add integration tests for queue consumer" |
-| docs-gap | "Document the deployment pipeline" |
-| research-update | "React docs are stale, need refresh" |
-| process-change | "Lightweight FIX needs sketch for auth-related bugs" |
+| Target           | Example                                              |
+| ---------------- | ---------------------------------------------------- |
+| skill-change     | "Sketch should ask about cross-platform impact"      |
+| claude-md-change | "Add convention about error handling in API layer"   |
+| code-pattern     | "Extract shared validation into middleware"          |
+| test-gap         | "Add integration tests for queue consumer"           |
+| docs-gap         | "Document the deployment pipeline"                   |
+| research-update  | "React docs are stale, need refresh"                 |
+| process-change   | "Lightweight FIX needs sketch for auth-related bugs" |
 
 Per-proposal format:
 
 ```markdown
 ### Proposal N: [title]
+
 - **Target:** [category]
 - **Evidence:** [which data points, what pattern]
 - **Description:** [what to change and why]
@@ -129,9 +138,9 @@ Per-proposal format:
 ### 7. Write proposals file
 
 Generate slug: `YYMMDD-NNN-kebab-topic` (same convention as all artifacts).
-Scan `.docs/evolve/` for highest NNN today, increment.
+Scan `wiki/evolve/` for highest NNN today, increment.
 
-Write to `.docs/evolve/<slug>-proposals.md`:
+Write to `wiki/evolve/<slug>-proposals.md`:
 
 ```yaml
 ---
@@ -146,7 +155,7 @@ status: draft
 
 ## Output
 
-`.docs/evolve/<slug>-proposals.md` with all proposals.
+`wiki/evolve/<slug>-proposals.md` with all proposals.
 
 ## Gotchas
 

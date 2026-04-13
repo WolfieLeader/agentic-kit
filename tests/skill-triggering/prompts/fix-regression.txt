@@ -1,1 +1,0 @@
-Our CI pipeline started failing on the payment tests. The Stripe webhook handler is returning 400 for subscription.updated events that were working fine last week.

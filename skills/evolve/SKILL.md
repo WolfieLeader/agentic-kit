@@ -1,31 +1,36 @@
 ---
 name: evolve
 description: >
-  Use when: proposals from /propose have been reviewed and accepted by the team.
-  Executes accepted proposals -- edits skills, CLAUDE.md, research docs, code,
-  and tests. Logs changes to CHANGELOG. The framework improves itself.
-type: user-invokable
+  Framework self-modification. Invoke ONLY when the user explicitly types
+  /evolve, or explicitly requests "apply proposals" / "run evolve" / "execute
+  framework changes". Do NOT auto-invoke; framework changes must be user-
+  initiated because they rewrite skills, CLAUDE.md, research docs, and tests.
+  Executes accepted proposals from /propose and logs changes to CHANGELOG.
+type: user-invocable
 ---
 
 ## Context
 
 Receives:
+
 - Proposals file path (or uses most recent)
 
 Reads:
-- `.docs/evolve/<slug>-proposals.md` (items with `status: accepted`)
+
+- `wiki/evolve/<slug>-proposals.md` (items with `status: accepted`)
 - Files targeted by each proposal
-- `.docs/extensions/` (if proposals target extension changes)
+- `wiki/extensions/` (if proposals target extension changes)
 
 Produces:
-- `.docs/evolve/<slug>-evolve.md` (execution log)
-- `.docs/CHANGELOG.md` entry
+
+- `wiki/evolve/<slug>-evolve.md` (execution log)
+- `wiki/CHANGELOG.md` entry
 
 ## Procedure
 
 ### 1. Load proposals
 
-Read the specified proposals file. If no path given, use most recent `.docs/evolve/*-proposals.md` by date prefix. Identify `status: accepted` items. If none, stop and inform user.
+Read the specified proposals file. If no path given, use most recent `wiki/evolve/*-proposals.md` by date prefix. Identify `status: accepted` items. If none, stop and inform user.
 
 ### 2. Execute in order
 
@@ -48,6 +53,7 @@ manual edits miss. Fall back to direct edits only if skill-creator is not instal
 ### 3. Handle research staleness
 
 For `research-update` proposals, evaluate each doc:
+
 - **Keep**: still accurate. Log "reviewed, no changes."
 - **Update**: core correct, references drifted. Edit in place.
 - **Replace**: misleading. Write new version, note rationale.
@@ -59,18 +65,20 @@ Change executed items from `accepted` to `completed`. Leave `rejected` and `defe
 
 ### 5. Write evolve log
 
-Create `.docs/evolve/<slug>-evolve.md` (slug matches source proposals). YAML frontmatter with `title`, `date`, `source_proposals`, `changes_made` list. Body has per-change detail: target, files modified, what changed, acceptance criteria met.
+Create `wiki/evolve/<slug>-evolve.md` (slug matches source proposals). YAML frontmatter with `title`, `date`, `source_proposals`, `changes_made` list. Body has per-change detail: target, files modified, what changed, acceptance criteria met.
 
 ### 6. Append CHANGELOG
 
-Add to `.docs/CHANGELOG.md` (create if missing):
+Add to `wiki/CHANGELOG.md` (create if missing):
 
 ```markdown
 ## Evolve [slug] -- YYYY-MM-DD
+
 Source: [proposals slug]
 Data points analyzed: slug1, slug2, slug3
 
 Changes:
+
 - [target] Description of change
 ```
 
@@ -91,7 +99,7 @@ Never create framework issues on application repos or vice versa.
 
 ## Output
 
-Modified target files, updated proposals file (completed statuses), `.docs/evolve/<slug>-evolve.md`, `.docs/CHANGELOG.md` entry.
+Modified target files, updated proposals file (completed statuses), `wiki/evolve/<slug>-evolve.md`, `wiki/CHANGELOG.md` entry.
 
 ## Gotchas
 

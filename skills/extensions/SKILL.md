@@ -1,23 +1,29 @@
 ---
 name: extensions
 description: >
-  Use when: user wants to add a project-specific agent or skill to a pipeline
-  phase (router, diagnose, craft, verify). Validates fit, checks phase caps,
-  updates .docs/extensions/ configuration.
-type: user-invokable
+  Project-specific pipeline extension registration. Invoke ONLY when the user
+  explicitly types /extensions, or explicitly requests "add a phase extension"
+  / "register a router/diagnose/craft/verify extension". Do NOT auto-invoke on
+  generic "add a skill" or "add an agent" requests -- those may belong as
+  standalone skills/agents rather than phase extensions. Validates fit, checks
+  phase caps, updates wiki/extensions/ config.
+type: user-invocable
 ---
 
 ## Context
 
 Receives:
+
 - Agent/skill name and target phase from user
 
 Reads:
+
 - The agent/skill file
-- `.docs/extensions/<phase>.md` (if exists)
+- `wiki/extensions/<phase>.md` (if exists)
 
 Produces:
-- Updated `.docs/extensions/<phase>.md`
+
+- Updated `wiki/extensions/<phase>.md`
 
 ## Procedure
 
@@ -40,8 +46,8 @@ Reject with explanation: sketch, blueprint, retro, explore -- "single-agent or c
 
 Search in order:
 
-| Type | Project path | User path |
-|---|---|---|
+| Type   | Project path      | User path           |
+| ------ | ----------------- | ------------------- |
 | Agents | `.claude/agents/` | `~/.claude/agents/` |
 | Skills | `.claude/skills/` | `~/.claude/skills/` |
 
@@ -69,25 +75,24 @@ additions. Do not silently register an extension with incompatible output.
 
 ### 6. Check extension cap
 
-| Phase | Framework agents | Extension cap |
-|---|---|---|
-| Router | 2 (code + docs explorer) | 2 |
-| Diagnose | 0 | 2 |
-| Craft | 0 | 2 agents + 2 skills |
-| Verify | 1 (unified code-reviewer) | 3 |
+| Phase    | Framework agents          | Extension cap       |
+| -------- | ------------------------- | ------------------- |
+| Router   | 2 (code + docs explorer)  | 2                   |
+| Diagnose | 0                         | 2                   |
+| Craft    | 0                         | 2 agents + 2 skills |
+| Verify   | 1 (unified code-reviewer) | 3                   |
 
 If cap reached: reject, suggest replacing an existing extension.
 
 ### 7. Write extension manifest
 
-Create or update `.docs/extensions/<phase>.md`:
+Create or update `wiki/extensions/<phase>.md`:
 
 ```yaml
 ---
 phase: [phase name]
 date_updated: [YYYY-MM-DD]
 ---
-
 agents:
   - name: [agent-name]
     source: project | user
@@ -100,7 +105,7 @@ skills:
 
 ## Output
 
-Updated `.docs/extensions/<phase>.md`.
+Updated `wiki/extensions/<phase>.md`.
 
 ## References
 

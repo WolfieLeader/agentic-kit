@@ -1,10 +1,12 @@
 ---
 name: yo
 description: >
-  Use when: user wants to build a feature, fix a bug, explore/research a question,
-  review code, or start any development task. Universal entry point -- routes to
-  BUILD, FIX, EXPLORE, or REVIEW pipeline with right-sized ceremony.
-type: user-invokable
+  Pipeline orchestrator. Invoke ONLY when the user explicitly types /yo, or
+  explicitly requests "run the pipeline" / "use the full workflow" / "route
+  through the router". Do NOT auto-invoke on routine development requests
+  (features, bugs, code review) -- handle those with direct tools unless the
+  user opts into the pipeline's ceremony. The ceremony is opt-in, not default.
+type: user-invocable
 ---
 
 # Yo
@@ -15,8 +17,8 @@ the full pipeline.
 ## Context
 
 - **Receives:** user input (natural language task description)
-- **Reads:** MAP.md, CLAUDE.md, `.docs/extensions/router.md`
-- **Greps:** `.docs/sketches/`, `.docs/retros/`, `.docs/research/` YAML frontmatter (module, tags, title)
+- **Reads:** MAP.md, CLAUDE.md, `wiki/extensions/router.md`
+- **Greps:** `wiki/sketches/`, `wiki/retros/`, `wiki/research/` YAML frontmatter (module, tags, title)
 - **Scans:** files likely to change (grep on keywords), git diff/log when relevant
 - **Generates:** slug (`YYMMDD-NNN-kebab-topic`, NNN resets daily starting at 001)
 
@@ -27,15 +29,15 @@ the full pipeline.
 Gather project context before engaging the user.
 
 1. Read MAP.md (if exists) + CLAUDE.md for project structure and conventions.
-2. If `.docs/` directory or MAP.md missing, run `/health init` to onboard the
+2. If `wiki/` directory or MAP.md missing, run `/health init` to onboard the
    project first. Resume self-look after onboarding completes.
 3. **Umbrella detection:** if the project has multiple repos (monorepo workspaces,
    sibling repos in a parent directory, or CLAUDE.md lists multiple repos), run
    `git status -sb` across **all** repos. This surfaces uncommitted work, active
    branches, and pending changes you'd otherwise miss during commit phase.
-4. Grep `.docs/sketches/` and `.docs/blueprints/` for matching module/tags/title --
+4. Grep `wiki/sketches/` and `wiki/blueprints/` for matching module/tags/title --
    this is the resume check. If a slug matches with `status: draft`, hold for Pass 4.
-5. Grep `.docs/research/` for prior research on the topic.
+5. Grep `wiki/research/` for prior research on the topic.
 6. Scan likely files based on user input (file names, imports, key identifiers).
 7. Check git context if user references recent changes (diff, log).
 
@@ -45,12 +47,12 @@ Classify from user input + self-look context.
 
 8. **Type** -- BUILD / FIX / EXPLORE / REVIEW.
 
-   | Type    | Signal words                                                              |
-   |---------|---------------------------------------------------------------------------|
+   | Type    | Signal words                                                                   |
+   | ------- | ------------------------------------------------------------------------------ |
    | BUILD   | "add", "create", "build", "implement", "new", "feature", "refactor", "migrate" |
    | FIX     | "fix", "bug", "broken", "error", "failing", "crash", "regression", "flaky"     |
    | EXPLORE | "why", "how does", "what would it take", "compare", "investigate", "research"  |
-   | REVIEW  | "review", "check code", "audit code", "look at this PR", "code review"        |
+   | REVIEW  | "review", "check code", "audit code", "look at this PR", "code review"         |
 
    When ambiguous, lean toward more investigation: FIX over BUILD, EXPLORE over FIX.
 
@@ -65,15 +67,15 @@ Classify from user input + self-look context.
 
 Scale question depth to user clarity:
 
-| User clarity               | Behavior                                    |
-|----------------------------|---------------------------------------------|
-| Intent + scope clear       | Classify, confirm, dispatch. 1 round.       |
-| Intent clear, scope unclear| 1-2 rounds to scope.                        |
-| Intent unclear             | Probe intent first, then scope. 2-3 rounds. |
-| Both unclear               | Iterative checkpoints until dispatch-ready.  |
+| User clarity                | Behavior                                    |
+| --------------------------- | ------------------------------------------- |
+| Intent + scope clear        | Classify, confirm, dispatch. 1 round.       |
+| Intent clear, scope unclear | 1-2 rounds to scope.                        |
+| Intent unclear              | Probe intent first, then scope. 2-3 rounds. |
+| Both unclear                | Iterative checkpoints until dispatch-ready. |
 
 10. **Checkpoint summary pattern:** present facts + assumptions + 0-2 genuine
-   questions (with recommended answers). If the codebase can answer it, don't ask.
+    questions (with recommended answers). If the codebase can answer it, don't ask.
 
 11. **Exit condition:** stop when you can write a clear one-paragraph dispatch
     summary covering what, where, and why.
@@ -93,23 +95,25 @@ Lightweight BUILD/FIX skips this entirely.
 13. Dispatch **framework explorers** in parallel with directed context from
     self-look -- specific search terms, file paths, module names:
     - `Agent(subagent_type: "general-purpose")` with `agents/code-explorer.md` instructions -- scans source code, traces dependencies, checks git history
-    - `Agent(subagent_type: "general-purpose")` with `agents/docs-explorer.md` instructions -- searches `.docs/` artifacts, research docs, external sources
+    - `Agent(subagent_type: "general-purpose")` with `agents/docs-explorer.md` instructions -- searches `wiki/` artifacts, research docs, external sources
 
-    > **Disambiguation:** `subagent_type: "Explore"` is the built-in fast
-    > codebase explorer (grep/glob only). `subagent_type: "feature-dev:code-explorer"`
-    > is an unrelated marketplace plugin. Framework explorers use `"general-purpose"`
-    > with the agent's instructions loaded as the prompt -- this gives them full
-    > tool access (Bash, Read, Grep, etc.) that the fast explorer lacks.
+    See `references/agent-dispatch.md` for the `subagent_type` disambiguation (built-in `Explore` vs marketplace `feature-dev:code-explorer` vs framework `general-purpose` pattern).
 
-14. If `.docs/extensions/router.md` exists, dispatch extension explorers defined there.
-15. Wait for explorer findings (in-context, not persisted -- sketch absorbs
-    what matters).
-16. Confirm final classification with explorer context. Tier may shift.
+14. If `wiki/extensions/router.md` exists, dispatch extension explorers defined there.
+15. Collect explorer findings and **persist immediately** to
+    `wiki/research/<slug>-exploration.md` with YAML frontmatter (slug, date,
+    explorers, scope). Keep only a 5-line digest + file path in the orchestrator's
+    active context. Sketch, blueprint, and craft re-read specific sections on
+    demand via grep/Read -- findings do not accumulate in the orchestrator
+    through the pipeline. This is the single biggest lever against context
+    bloat: raw findings are 2-5k tokens per explorer, and without persistence
+    they ride through every subsequent phase.
+16. Confirm final classification with the digest. Tier may shift.
 
 ### Pass 6: Pipeline Orchestration
 
 17. Generate slug: `YYMMDD-NNN-kebab-topic`. To determine NNN: glob today's date
-    prefix (`YYMMDD-*`) across `.docs/{sketches,diagnoses,reviews,retros}/`.
+    prefix (`YYMMDD-*`) across `wiki/{sketches,diagnoses,reviews,retros}/`.
     Find highest NNN, increment. If none, start at 001.
 
 18. Route to pipeline based on type and tier:
@@ -126,15 +130,29 @@ Lightweight BUILD/FIX skips this entirely.
     See `references/explore-pipeline.md` for EXPLORE synthesis and transition rules.
 
 19. For each phase: load the phase's SKILL.md via Skill tool, follow it,
-    write artifacts to disk, then load next.
-20. Lightweight: all phases run inline in parent session. No subagents
+    write artifacts to disk. Perform the handoff checkpoint (20) before
+    loading the next phase.
+20. **Phase handoff checkpoint (std/deep)** -- after each phase writes its
+    artifact, present to user:
+    - Phase complete: `<phase>` -> `wiki/<type>/<slug>.md`
+    - 2-3 line summary of the artifact's content
+    - Next phase: `<name>`
+    - "Proceed, revise, or stop?"
+      Wait for explicit user response. Do NOT auto-advance on silence, tool
+      output, or related signals. The checkpoint exists so the user can adjust
+      course between phases; without it the pipeline steamrolls and the
+      orchestrator's context accumulates everything.
+21. **Auto-advance opt-in** -- if the user said "run it all" / "auto-proceed"
+    at dispatch, skip 20 for the session. Lightweight tier auto-advances by
+    default, because skipping ceremony is its entire purpose.
+22. Lightweight: all phases run inline in parent session. No subagents
     except diagnose extensions.
 
 ### Pass 7: Transitions
 
-21. EXPLORE may transition to BUILD or FIX -- reuse explorer findings and
+23. EXPLORE may transition to BUILD or FIX -- reuse explorer findings and
     research context without re-exploration.
-22. REVIEW may transition to FIX -- reuse review findings and explorer context.
+24. REVIEW may transition to FIX -- reuse review findings and explorer context.
     "Found a bug during review, let's fix it."
 
 Pipeline ends at retro (BUILD/FIX), research persistence (EXPLORE), or review
@@ -142,23 +160,13 @@ persistence (REVIEW). Don't suggest git operations after completion.
 
 ## REVIEW Pipeline
 
-REVIEW composes existing pieces -- no new skill needed.
-
-1. **Scope**: determine what to review (module path, PR number, file list).
-2. **Explore**: dispatch framework explorers (see Pass 5 disambiguation) for context.
-   For umbrella projects, include **inter-service communication paths** as an explicit
-   exploration dimension -- HTTP clients, shared contracts, message queues between repos.
-3. **Review**: dispatch code-reviewer agent with exploration findings + diff/scope.
-4. **Persist**: write review artifact to `.docs/reviews/<slug>.md` with YAML frontmatter
-   (module, tags, date, finding counts by severity).
-5. **Present**: show findings to user. Offer transition to FIX if actionable bugs found.
-
-For PR review: get diff via `gh pr diff <number>`, pass as input to code-reviewer.
-For module review: explorers provide the context, code-reviewer reviews the code.
+REVIEW composes existing pieces -- scope -> explore -> review -> persist ->
+present. See `references/review-pipeline.md` for the full procedure, PR vs
+module input patterns, and checkpoint behavior.
 
 ## Artifact Ecosystem
 
-`.docs/` is a knowledge graph traversable via YAML frontmatter grep.
+`wiki/` is a knowledge graph traversable via YAML frontmatter grep.
 See `references/artifact-ecosystem.md` for the full directory mapping, frontmatter schema, and grep patterns.
 
 ## Output
@@ -169,9 +177,11 @@ See `references/artifact-ecosystem.md` for the full directory mapping, frontmatt
 
 ## References
 
-- `references/agent-dispatch.md` -- how to compose Agent tool calls with framework agent files
+- `references/agent-dispatch.md` -- how to compose Agent tool calls with framework agent files; `subagent_type` disambiguation
 - `references/explore-pipeline.md` -- EXPLORE synthesis, citation rules, transition protocol
-- `references/artifact-ecosystem.md` -- `.docs/` directory mapping, frontmatter schema, grep patterns
+- `references/artifact-ecosystem.md` -- `wiki/` directory mapping, frontmatter schema, grep patterns
+- `references/review-pipeline.md` -- REVIEW scope/explore/review/persist/present procedure
+- `references/rationalization-red-flags.md` -- 8 router rationalizations and why each fails
 
 ## Gotchas
 
@@ -179,18 +189,10 @@ See `references/artifact-ecosystem.md` for the full directory mapping, frontmatt
 - **Lightweight is the exception.** 2+ files or 2+ concerns is standard.
 - **Direct the explorers.** Specific search terms and file paths, not "look around."
 - **Shortcuts exist.** Clear spec + urgency = fast-track.
-- **Resume before restart.** Check `.docs/sketches/` for draft status before creating new slug.
+- **Resume before restart.** Check `wiki/sketches/` for draft status before creating new slug.
 - **REVIEW is not EXPLORE.** EXPLORE = understanding. REVIEW = evaluating and finding problems.
 - **Umbrella projects need a full sweep.** Self-look must cover all repos, not just the one the user mentioned. Uncommitted changes in sibling repos cause surprise conflicts at push time.
 - **Explorer naming matters.** `"Explore"` = fast built-in (grep/glob only). `"feature-dev:code-explorer"` = marketplace plugin. Framework explorers = `"general-purpose"` with agent .md loaded. Using the wrong type dispatches the wrong agent with the wrong tools.
-
-## Rationalization Red Flags
-
-If you catch yourself thinking any of these, STOP and follow the router procedure:
-
-1. "I already know this codebase" — self-look catches changes since your last session. MAP.md and recent retros may have shifted the landscape.
-2. "This is obviously BUILD/FIX" — classify after self-look, not before. Misclassification routes to the wrong pipeline.
-3. "I can explore the code myself during craft" — explorers run in parallel and surface cross-module context you'd miss under implementation tunnel vision.
-4. "This seems simple, lightweight is fine" — 2+ files or 2+ concerns = standard. Underclassification causes mid-implementation rework.
-5. "Let me start fresh, the old sketch is stale" — ask the user. Their in-progress work may be more current than you think.
-6. "The user wants me to just do it" — urgency is a shortcut trigger, not a skip-everything trigger. Fast-track still classifies and confirms.
+- **Phase checkpoint is mandatory for std/deep.** Step 20 requires explicit user "proceed" between phases. Silence is not consent. The pause is what keeps orchestrator context from accumulating every phase's artifact through the whole pipeline.
+- **Explorer findings persist first, then digest.** Raw findings (~2-5k tokens per explorer) do not belong in the orchestrator's active context -- write to `wiki/research/<slug>-exploration.md` immediately, keep only the digest + path.
+- **Check rationalizations before skipping.** 8 specific router traps in `references/rationalization-red-flags.md` -- read when tempted to skip self-look or auto-advance through a checkpoint.

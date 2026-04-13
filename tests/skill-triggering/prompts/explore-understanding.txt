@@ -1,1 +1,0 @@
-How does the authentication module work? I need to understand the token refresh flow and how sessions are managed before I make changes to the auth middleware.

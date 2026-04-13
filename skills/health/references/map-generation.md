@@ -1,6 +1,6 @@
 # MAP.md Generation
 
-MAP.md maps the project codebase (not `.docs/`). Generated during `/health init`.
+MAP.md maps the project codebase (not `wiki/`). Generated during `/health init`.
 
 ## Discovery
 
@@ -113,13 +113,13 @@ source file and verifying you can derive its path from the map alone.
 
 MAP.md has multiple writers. This is the authoritative lifecycle:
 
-| Operation | Owner | When | Rule |
-|---|---|---|---|
-| **Create** | `/health init` | Project onboarding | Full generation from structural discovery |
-| **Append** | `retro` (step 7) | After each task | Incremental — add new modules/paths only, never rewrite existing content |
-| **Validate** | `/health diagnose` (step 5) | On-demand diagnostic | Detect drift (unmapped dirs, stale entries, missing README markers). Report only, no edits |
-| **Clean up** | `/evolve` | When proposals target MAP.md | Remove stale entries, update annotations. Only via accepted proposal |
-| **Deep refresh** | `/health init` (re-run) | When MAP.md is severely drifted | User-triggered. Re-runs structural discovery, regenerates |
+| Operation        | Owner                       | When                            | Rule                                                                                       |
+| ---------------- | --------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Create**       | `/health init`              | Project onboarding              | Full generation from structural discovery                                                  |
+| **Append**       | `retro` (step 7)            | After each task                 | Incremental — add new modules/paths only, never rewrite existing content                   |
+| **Validate**     | `/health diagnose` (step 5) | On-demand diagnostic            | Detect drift (unmapped dirs, stale entries, missing README markers). Report only, no edits |
+| **Clean up**     | `/evolve`                   | When proposals target MAP.md    | Remove stale entries, update annotations. Only via accepted proposal                       |
+| **Deep refresh** | `/health init` (re-run)     | When MAP.md is severely drifted | User-triggered. Re-runs structural discovery, regenerates                                  |
 
 **Conflict rule:** if retro appends an entry that `/health` later flags as
 stale, `/evolve` is the tiebreaker — it decides whether to keep or remove

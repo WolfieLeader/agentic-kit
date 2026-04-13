@@ -5,11 +5,11 @@
 
 - **Type:** Claude Code plugin (skills + agents in Markdown)
 - **Structure:** `skills/` (SKILL.md per skill), `agents/` (one .md per agent), `docs/` (design docs)
-- **Artifacts at runtime:** `.docs/` (sketches, blueprints, retros, reviews, diagnoses, reports, research, evolve, extensions, MAP.md)
+- **Artifacts at runtime:** `wiki/` (sketches, blueprints, retros, reviews, diagnoses, reports, research, evolve, extensions, MAP.md)
 
 ## Conventions
 
-- YAML frontmatter on all `.docs/` artifacts for grep-first retrieval
+- YAML frontmatter on all `wiki/` artifacts for grep-first retrieval
 - Skill files: < 200 lines in SKILL.md, overflow to `references/`
 - Agent files: < 120 lines, one-line voice reference ("Follows framework voice conventions")
 - Slugs: `YYMMDD-NNN-kebab-topic` (NNN resets daily at 001)

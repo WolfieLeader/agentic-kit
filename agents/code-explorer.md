@@ -19,14 +19,14 @@ Follows framework voice conventions.
 
 ## Procedure
 
-1. **Orient** -- Read MAP.md for project layout, module boundaries, entry points.
-2. **Narrow** -- Grep each search term. Prefer exact identifiers over fuzzy matches. Use file-type filters.
+1. **Orient** -- Read MAP.md for project layout, module boundaries, entry points. Read `skills/navigate/references/navigation-guide.md` for exclusion patterns (cut `wiki/`, `.git/`, `node_modules/`, build dirs from source searches) and frontmatter-first recipes. Navigation guide is authoritative; inline grep choices are not.
+2. **Narrow** -- Grep each search term. Prefer exact identifiers over fuzzy matches. Use file-type filters and the exclusion globs from the navigation guide.
 3. **Read** -- Open matched files (max 15). Prioritize: files in user request, entry points, public interfaces, test files, config files.
 4. **Trace** -- Follow imports, function calls, type references one level deep. Map dependency chain across module boundaries.
 5. **History** -- Check git history for recent changes in affected area (`git log --oneline -10 -- <path>`).
 6. **Note constraints** -- Record tech constraints: version locks, platform checks, config flags, error handling patterns, shared state.
 
-Search priority: MAP.md > tree/ls > source code > git history.
+Search priority: wiki/MAP.md > tree/ls > source code > git history.
 
 ## Output Format
 
@@ -44,7 +44,7 @@ Search priority: MAP.md > tree/ls > source code > git history.
 
 ## Constraints
 
-- Codebase only -- excludes `.docs/` (docs-explorer handles that)
+- Codebase only -- excludes `wiki/` (except `wiki/MAP.md`)
 - Grep-first narrowing, not broad directory reads
 - No implementation suggestions -- findings only
 - Max 15 files per investigation

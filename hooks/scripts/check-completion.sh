@@ -23,12 +23,12 @@ EOF
 # Check for incomplete pipelines: draft artifacts without retros
 INCOMPLETE=""
 for dir in sketches blueprints; do
-  [ -d "$CWD/.docs/$dir" ] || continue
-  for f in "$CWD/.docs/$dir"/*.md; do
+  [ -d "$CWD/wiki/$dir" ] || continue
+  for f in "$CWD/wiki/$dir"/*.md; do
     [ -f "$f" ] || continue
     if head -15 "$f" | grep -qi "status:.*draft"; then
       SLUG=$(basename "$f" .md)
-      if [ ! -f "$CWD/.docs/retros/$SLUG.md" ]; then
+      if [ ! -f "$CWD/wiki/retros/$SLUG.md" ]; then
         INCOMPLETE="${INCOMPLETE}${SLUG} "
       fi
     fi

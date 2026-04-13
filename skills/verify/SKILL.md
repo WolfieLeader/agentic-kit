@@ -11,12 +11,14 @@ type: internal
 ## Context
 
 Receives:
+
 - Lightweight: diff + user's original request
 - Std/deep: diff + sketch.md path + blueprint.md path
 
 Reads:
+
 - Test output, build output
-- `.docs/extensions/verify.md` for extension reviewers
+- `wiki/extensions/verify.md` for extension reviewers
 - Source code as needed for wiring checks
 
 ## Iron Law of Verification
@@ -35,11 +37,11 @@ Run command. Read output. Count failures. THEN claim result.
 
 Set by user or orchestrator before verify runs. Default: interactive.
 
-| Mode | Behavior |
-|---|---|
-| **interactive** | Triage findings, fix P0/P1, user decides P2/P3. Default. |
-| **report-only** | All findings reported, no fixes attempted. For audits. |
-| **autofix** | P0/P1 fixed automatically, P2/P3 logged to retro. For CI. |
+| Mode            | Behavior                                                  |
+| --------------- | --------------------------------------------------------- |
+| **interactive** | Triage findings, fix P0/P1, user decides P2/P3. Default.  |
+| **report-only** | All findings reported, no fixes attempted. For audits.    |
+| **autofix**     | P0/P1 fixed automatically, P2/P3 logged to retro. For CI. |
 
 Mode applies to Phase 2 (review) only. Phase 1 (verification) always runs fully.
 
@@ -67,7 +69,7 @@ All 4 pass -> proceed to retro.
    - New env vars documented?
    - New dependencies in package/config files?
    - DB migrations included if schema changed?
-5. **Sketch/blueprint compliance** -- check `.docs/sketches/<slug>.md` success criteria against implementation. Verify each blueprint unit's verification criteria met.
+5. **Sketch/blueprint compliance** -- check `wiki/sketches/<slug>.md` success criteria against implementation. Verify each blueprint unit's verification criteria met.
 6. **Cross-repo contract check** (umbrella projects only) -- if the change touches
    APIs, shared types, message schemas, or HTTP endpoints consumed by other repos:
    - Check CLAUDE.md for a **Cross-Repo Dependencies** table (provider → consumer → contract)
@@ -88,18 +90,19 @@ All 6 pass (or 5 for single-repo) -> proceed to Phase 2.
 
 Agent returns findings with severity and evidence.
 
-**2. Dispatch extension reviewers** -- if `.docs/extensions/verify.md` exists, dispatch domain-specific reviewers (accessibility, performance, API contracts, etc.).
+**2. Dispatch extension reviewers** -- if `wiki/extensions/verify.md` exists, dispatch domain-specific reviewers (accessibility, performance, API contracts, etc.).
 
 **3. Triage findings:**
 
-| Priority | Definition | Action |
-|---|---|---|
-| P0 -- Critical | Security flaw, data loss, crash | Fix immediately |
-| P1 -- High | Bug, missing error handling | Fix before proceeding |
-| P2 -- Medium | Code quality, minor issues | Fix if straightforward (<5 min) |
-| P3 -- Low | Style, preference, optimization | User discretion |
+| Priority       | Definition                      | Action                          |
+| -------------- | ------------------------------- | ------------------------------- |
+| P0 -- Critical | Security flaw, data loss, crash | Fix immediately                 |
+| P1 -- High     | Bug, missing error handling     | Fix before proceeding           |
+| P2 -- Medium   | Code quality, minor issues      | Fix if straightforward (<5 min) |
+| P3 -- Low      | Style, preference, optimization | User discretion                 |
 
 **4. Defense protocol** -- see references/review-defense.md. Summary:
+
 - Verify each finding against actual code before acting
 - Classify: valid+actionable, valid+not actionable, technically wrong, unclear, contradicts durable decision
 - Clarify ALL unclear items before implementing any changes
@@ -112,6 +115,7 @@ After P0/P1 resolved -> pass to retro.
 ## Output
 
 Produces:
+
 - Verification evidence (test output, build output, scan results)
 - Review findings with severity (std/deep only)
 - Resolution of P0/P1 findings

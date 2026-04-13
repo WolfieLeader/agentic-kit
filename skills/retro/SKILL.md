@@ -11,14 +11,16 @@ type: internal
 ## Context
 
 Receives:
+
 - Session context (full conversation history)
 - Sketch path (std/deep; omitted for lightweight)
 
 Reads:
+
 - Git diff (all changes in session)
 - Test results (final verification output)
-- `.docs/sketches/<slug>.md` (std/deep, if exists)
-- `.docs/blueprints/<slug>.md` (std/deep, if exists)
+- `wiki/sketches/<slug>.md` (std/deep, if exists)
+- `wiki/blueprints/<slug>.md` (std/deep, if exists)
 - MAP.md (for incremental updates)
 
 ## Procedure
@@ -33,13 +35,14 @@ Reads:
 
 - Run `git diff` against session start point. Read output.
 - Read final test results from verify phase.
-- Read `.docs/sketches/<slug>.md` success criteria (std/deep).
+- Read `wiki/sketches/<slug>.md` success criteria (std/deep).
 
 ### 3. Write initial retro
 
-Write to `.docs/retros/<slug>.md` using template (see references/retro-template.md). Include YAML frontmatter.
+Write to `wiki/retros/<slug>.md` using template (see references/retro-template.md). Include YAML frontmatter.
 
 **Frontmatter matters downstream.** Every field feeds `/propose` pattern detection:
+
 - `module:` + `affected_modules:` — cluster retros by subsystem, detect cross-module pain points
 - `tags:` — grep-traversable keywords connecting retros to research and sketches
 - `root_cause:` (FIX) — aggregated across retros to detect systemic patterns
@@ -68,11 +71,11 @@ For "What Went Wrong": write free-text explanation first, then tag with root cau
 Set `token_effort` in frontmatter — agent self-assessment of whether this task
 burned more tokens than its tier/scope warranted. Use these calibration signals:
 
-| Level | Retry cycles | Explorer dispatches | Circuit breaker hits | Typical signal |
-|---|---|---|---|---|
-| **low** | 0-1 | 0-1 | 0 | Straightforward, first approach worked |
-| **medium** | 2-3 | 1-2 | 0 | Some exploration needed, one wrong turn corrected |
-| **high** | 4+ | 3+ | 1+ | Significant backtracking, multiple approach changes, or context-heavy |
+| Level      | Retry cycles | Explorer dispatches | Circuit breaker hits | Typical signal                                                        |
+| ---------- | ------------ | ------------------- | -------------------- | --------------------------------------------------------------------- |
+| **low**    | 0-1          | 0-1                 | 0                    | Straightforward, first approach worked                                |
+| **medium** | 2-3          | 1-2                 | 0                    | Some exploration needed, one wrong turn corrected                     |
+| **high**   | 4+           | 3+                  | 1+                   | Significant backtracking, multiple approach changes, or context-heavy |
 
 This feeds `/propose` pattern detection. Consistent `high` on lightweight tasks
 signals a routing problem (tasks being under-classified). Consistent `high` on
@@ -81,6 +84,7 @@ a specific module signals the module needs better documentation or conventions.
 ### 6. Finalize
 
 After user confirms or session ends:
+
 - Update frontmatter with final status
 - Incorporate user feedback
 - Add any new What Went Wrong items from testing phase
@@ -88,12 +92,13 @@ After user confirms or session ends:
 ### 7. Update MAP.md
 
 If session touched new modules, paths, or architectural boundaries:
+
 - Read current MAP.md
 - Append new entries incrementally (do not rewrite existing content)
 
 ## Output
 
-Produces: `.docs/retros/<slug>.md`
+Produces: `wiki/retros/<slug>.md`
 Updates: MAP.md (if new modules/paths touched)
 Passes to: done
 

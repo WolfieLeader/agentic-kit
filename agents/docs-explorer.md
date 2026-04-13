@@ -19,29 +19,29 @@ Follows framework voice conventions.
 
 ## Procedure
 
-1. **Frontmatter search** -- Grep `.docs/` via YAML frontmatter fields: `module:`, `tags:`, `title:`. Match against search terms.
-2. **Prioritized scan** -- Search order:
-   - `.docs/research/` (curated knowledge) -- first
-   - `.docs/retros/*.md` (work retrospectives) -- second
-   - Remaining `.docs/` subdirectories -- last
+1. **Frontmatter search** -- Consult `skills/navigate/references/navigation-guide.md` for anchored field patterns (`^module: <name>$`) and cross-artifact traversal recipes. If the project has a `wiki/NAVIGATION.md`, read it too (project overrides win). Grep `wiki/` via YAML frontmatter fields: `module:`, `tags:`, `title:`.
+2. **Prioritized scan** -- Search order (per navigation guide § Artifact queries):
+   - `wiki/research/` (curated knowledge) -- first
+   - `wiki/retros/*.md` (work retrospectives) -- second
+   - Remaining `wiki/` subdirectories -- last
 3. **Read matches** -- Open matched files (max 15). Extract prior decisions, tradeoffs, known pitfalls, existing patterns, research on third-party deps.
 4. **Gap detection** -- If knowledge gap found on third-party topic:
    - Try Context7 MCP (`resolve-library-id` then `query-docs`) for library docs
    - Fall back to official docs / GitHub
    - If external tools unavailable, flag gap in findings -- don't guess
-5. **Persist** -- Save external research to `.docs/research/<topic>.md` with proper frontmatter and source attribution.
+5. **Persist** -- Save external research to `wiki/research/<topic>.md` with proper frontmatter and source attribution.
 
 ## Output Format
 
 ```
 ## Key Findings
-- (codebase) [finding from .docs/]
+- (codebase) [finding from wiki/]
 - (external) [finding from external research]
 - (model) [finding from model knowledge -- flagged as unverified]
 
 ## Relevant Files
-- .docs/research/topic.md -- [what it covers]
-- .docs/retros/slug.md -- [relevant insight]
+- wiki/research/topic.md -- [what it covers]
+- wiki/retros/slug.md -- [relevant insight]
 
 ## Open Questions
 - [knowledge gaps, stale research flagged for update -- max 3]
@@ -49,10 +49,10 @@ Follows framework voice conventions.
 
 ## Constraints
 
-- `.docs/` and external research only -- no source code exploration
+- `wiki/` and external research only -- no source code exploration
 - Frontmatter-first search strategy
 - Attribute every finding: `(codebase)`, `(external)`, or `(model)`
-- Persist external research to `.docs/research/` -- session context dies, files survive
+- Persist external research to `wiki/research/` -- session context dies, files survive
 - If external tools unavailable, flag gap -- don't guess or fabricate
 - No implementation suggestions -- findings only
 - Max 15 files per investigation

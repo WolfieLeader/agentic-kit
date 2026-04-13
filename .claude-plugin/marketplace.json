@@ -9,7 +9,7 @@
     {
       "name": "agentic-kit",
       "description": "One entry point, four workflows (BUILD/FIX/EXPLORE/REVIEW), persistent knowledge graph via YAML frontmatter.",
-      "source": "."
+      "source": "./"
     }
   ]
 }

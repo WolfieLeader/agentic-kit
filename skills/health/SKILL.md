@@ -152,40 +152,23 @@ If 2+ research docs exist with overlapping `module:` or `tags:`:
 - Read both, compare claims
 - Flag conflicting information between docs on the same topic
 
+### 9. Discoverability audit
+
+Check whether key project knowledge is surfaced where agents will find it.
+
+- **CLAUDE.md coverage**: compare modules listed in MAP.md against CLAUDE.md mentions. Modules with 3+ retros but no CLAUDE.md mention = WARN (undiscoverable conventions).
+- **Retro pattern surfacing**: grep recent retros for recurring `root_cause:` categories. If a root cause appears 3+ times but CLAUDE.md has no convention addressing it = WARN (unsurfaced learning).
+- **MAP.md README gaps**: modules with high retro/review activity but no README = WARN (agents waste tokens exploring without orientation).
+
 ## Output
 
-Write to `.docs/reports/YYMMDD-health.md`:
-
-```yaml
----
-date: YYYY-MM-DD
-type: health
-checks_run: 8
-warn_count: N
-info_count: N
----
-```
-
-```markdown
-## Health Report — [project name] — [date]
-
-### WARN (act on these)
-- [finding]
-
-### INFO (awareness)
-- [finding]
-
-### OK (passing)
-- [check name] — passed
-```
-
-Also print the report to the user. The persisted file lets `/propose`
-reference health findings when drafting proposals.
+Write to `.docs/reports/YYMMDD-health.md` using `references/report-template.md`.
 
 ## References
 
 - `references/claude-md-template.md` — CLAUDE.md scaffold template for init mode
 - `references/map-generation.md` — MAP.md generation rules, format, and maintenance
+- `references/report-template.md` — Health report output format
 
 ## Gotchas
 

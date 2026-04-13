@@ -94,6 +94,10 @@ skills:
 
 Updated `.docs/extensions/<phase>.md`.
 
+## References
+
+- `references/registry.md` -- Extension types, integration points, output contracts, and examples per phase
+
 ## Gotchas
 
 - All extensions are always-on -- no per-task toggling or conditional triggers.

@@ -31,6 +31,18 @@ Run command. Read output. Count failures. THEN claim result.
 "No stubs" requires: search output in context showing 0 matches.
 ```
 
+## Operational Modes
+
+Set by user or orchestrator before verify runs. Default: interactive.
+
+| Mode | Behavior |
+|---|---|
+| **interactive** | Triage findings, fix P0/P1, user decides P2/P3. Default. |
+| **report-only** | All findings reported, no fixes attempted. For audits. |
+| **autofix** | P0/P1 fixed automatically, P2/P3 logged to retro. For CI. |
+
+Mode applies to Phase 2 (review) only. Phase 1 (verification) always runs fully.
+
 ## Procedure -- Lightweight
 
 Inline, no subagent. Four checks.
@@ -102,6 +114,9 @@ Passes to: retro
 ## References
 
 - references/review-defense.md -- defense protocol, push-back template, anti-sycophancy rules
+- references/security-checklist.md -- OWASP, auth, injection, data protection (for security extension reviewers)
+- references/performance-checklist.md -- DB, API, frontend optimization (for performance extension reviewers)
+- references/accessibility-checklist.md -- WCAG 2.1, keyboard, ARIA, forms (for accessibility extension reviewers)
 
 ## Gotchas
 

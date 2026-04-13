@@ -1,0 +1,1 @@
+Review the payment service code. I want to make sure there aren't any security issues or edge cases we're missing in the Stripe integration before we go to production.

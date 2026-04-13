@@ -68,8 +68,15 @@ All 4 pass -> proceed to retro.
    - New dependencies in package/config files?
    - DB migrations included if schema changed?
 5. **Sketch/blueprint compliance** -- check `.docs/sketches/<slug>.md` success criteria against implementation. Verify each blueprint unit's verification criteria met.
+6. **Cross-repo contract check** (umbrella projects only) -- if the change touches
+   APIs, shared types, message schemas, or HTTP endpoints consumed by other repos:
+   - Check CLAUDE.md for a **Cross-Repo Dependencies** table (provider → consumer → contract)
+   - If no table exists, infer consumers from imports, API clients, and shared type references
+   - Verify contracts still hold (type compatibility, endpoint paths, request/response shapes)
+   - Run type-check or build in affected consumer repos if feasible
+   - Skip when the change is purely internal to one repo with no external surface
 
-All 5 pass -> proceed to Phase 2.
+All 6 pass (or 5 for single-repo) -> proceed to Phase 2.
 
 ### Phase 2: Review (subagent)
 
@@ -114,6 +121,7 @@ Passes to: retro
 ## References
 
 - references/review-defense.md -- defense protocol, push-back template, anti-sycophancy rules
+- yo/references/agent-dispatch.md -- how to compose Agent tool calls (for code-reviewer and extension dispatch)
 - references/security-checklist.md -- OWASP, auth, injection, data protection (for security extension reviewers)
 - references/performance-checklist.md -- DB, API, frontend optimization (for performance extension reviewers)
 - references/accessibility-checklist.md -- WCAG 2.1, keyboard, ARIA, forms (for accessibility extension reviewers)
@@ -124,6 +132,7 @@ Passes to: retro
 - Wiring check catches the #1 demo-day bug: feature works in isolation, not connected to app.
 - Review defense is not optional. Blind acceptance causes churn and regressions.
 - Extension reviewers are additive. Core 3-pass review always runs.
+- Cross-repo breaks hide in passing tests. A backend API change can break a mobile client that never runs in the same test suite.
 
 ## Rationalization Red Flags
 

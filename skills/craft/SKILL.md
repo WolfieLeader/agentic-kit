@@ -50,7 +50,9 @@ For each unit in execution order:
 - Project conventions (test framework, file structure, naming)
 
 **B. Dispatch fresh opus subagent:**
-- Subagent gets context bundle only. No full blueprint (context isolation).
+- Subagent gets context bundle only. No full blueprint (**context scoping** —
+  the subagent has filesystem access and *could* read more, but scoping its
+  prompt to one unit keeps it focused and prevents context overload).
 - Subagent follows TDD cycle (same as lightweight steps 2-6).
 - Process test scenarios one-at-a-time. Never batch-generate tests.
 - Model: opus default. Sonnet ONLY for trivially mechanical units (rename, color change, single-line config).
@@ -113,10 +115,12 @@ Passes to: verify
 ## References
 
 - references/tdd-guardrails.md -- iron law, RED-GREEN-REFACTOR cycle, exception protocol, circuit breaker, red flags
+- yo/references/agent-dispatch.md -- how to compose Agent tool calls (for unit subagent and extension dispatch)
 
 ## Gotchas
 
-- Context isolation: subagents do NOT see the full blueprint. They get their unit only.
+- Context scoping: subagents get their unit only in the prompt. They *can* read the full blueprint from disk but shouldn't need to — if a unit needs cross-unit context, the durable decisions section or the context bundle should cover it.
 - Durable decisions are authoritative constraints, not suggestions.
 - Exception protocol is for genuinely non-testable changes. Logic is always testable.
 - Extensions in `.docs/extensions/craft.md` are optional. Skip gracefully if file missing.
+- Default is opus. Sonnet is the exception, not the optimization. Downgrade only for trivially mechanical units (rename, color change, single-line config). If you're debating whether a unit is "mechanical enough," it isn't — use opus.

@@ -1,7 +1,7 @@
 ---
 name: blueprint-reviewer
 role: Blueprint validation
-model: sonnet
+model: opus
 phase: blueprint
 budget: 10 files
 output_budget: 15-20 lines

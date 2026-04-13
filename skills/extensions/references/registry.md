@@ -6,7 +6,10 @@ Reference for available extension types, integration points, and examples.
 
 ### Router Extensions (cap: 2)
 
-Dispatch alongside code-explorer and docs-explorer during Pass 5.
+Dispatch alongside the framework's code-explorer and docs-explorer agents
+during Pass 5. (These are `Agent(subagent_type: "general-purpose")` with the
+agent .md instructions — not the built-in `"Explore"` or the marketplace
+`"feature-dev:code-explorer"`. See yo/SKILL.md Pass 5 disambiguation.)
 
 **Purpose:** Surface domain-specific context the framework explorers miss.
 

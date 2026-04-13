@@ -41,6 +41,10 @@ Dependencies flow downward -- execute by target type:
 
 For each: read target files, make the change, verify acceptance criteria, record what changed.
 
+**Skill changes:** For `skill-change` proposals, prefer invoking `/skill-creator`
+if available -- it handles validation, formatting, and test case management that
+manual edits miss. Fall back to direct edits only if skill-creator is not installed.
+
 ### 3. Handle research staleness
 
 For `research-update` proposals, evaluate each doc:
@@ -74,6 +78,17 @@ Changes:
 
 If `code-pattern` or `test-gap` proposals executed, run the test suite. Fail: revert change, mark proposal `blocked` (not `completed`), log failure reason.
 
+### 8. Create GitHub issues (if applicable)
+
+If proposals suggest changes that belong in a different repository (upstream
+framework fixes, cross-repo contract changes, external dependency updates):
+
+1. Check CLAUDE.md for a **GitHub Issue Routing** table. Route to the correct repo.
+2. If no routing table exists, ask the user which repo to target.
+3. Create issues with clear context: what changed, why, and what the other repo needs to do.
+
+Never create framework issues on application repos or vice versa.
+
 ## Output
 
 Modified target files, updated proposals file (completed statuses), `.docs/evolve/<slug>-evolve.md`, `.docs/CHANGELOG.md` entry.
@@ -85,3 +100,5 @@ Modified target files, updated proposals file (completed statuses), `.docs/evolv
 - CHANGELOG is append-only. Never edit prior entries.
 - Research doc deletion is recoverable via git. Always log deletion rationale.
 - Test failures trigger revert + blocked status, not completed.
+- Route GitHub issues correctly. Framework changes → framework repo. App changes → app repo. Check CLAUDE.md routing table.
+- Prefer `/skill-creator` for skill edits. Direct `Edit` calls on SKILL.md files skip validation and formatting that skill-creator provides.

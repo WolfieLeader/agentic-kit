@@ -33,17 +33,38 @@ Reads:
 
 Trigger: `/health init`, or auto-detected when `.docs/` directory does not exist.
 
-### 1. Generate MAP.md
+### 1. Structural Discovery
 
-Scan the project structure (`tree` or `ls`, whichever is available). Write
+Before generating MAP.md, determine how deep the project goes.
+
+**Depth probe:** Run `find . -type f \( -name "*.ts" -o -name "*.rs" -o -name "*.kt" -o -name "*.go" -o -name "*.py" -o -name "*.java" -o -name "*.swift" \) | head -20` (adapt extensions to the project) and check the longest path depth. Also check for multiple build systems (package.json + Cargo.toml + build.gradle + go.mod + pyproject.toml = umbrella).
+
+- **Shallow project** (max source depth ≤ 4 levels, single build system): inline
+  discovery with `tree`/`ls` is sufficient. Proceed to step 2.
+- **Deep project** (max source depth > 4 levels OR multiple build systems):
+  dispatch `Agent(subagent_type: "general-purpose")` per major sub-project
+  (needs Bash for `find`, not just grep/glob). Each explorer:
+  - Uses `find` at depth 6+ to trace actual source paths
+  - Reports leaf directories per module (not assumed from convention — verified)
+  - Identifies boilerplate path patterns (the fixed scaffold between module root and source code)
+  - Notes README locations and entry points
+
+Explorer findings feed directly into MAP.md generation.
+
+### 2. Generate MAP.md
+
+Use structural discovery results (inline or from explorers). Write
 `.docs/MAP.md` following format rules in `references/map-generation.md`:
 - Tree structure with annotations, not markdown formatting
 - Collapsed platform notation (document boilerplate path pattern once at top)
+- **Boilerplate path formulas** for deep frameworks (see map-generation.md "Deep Platform Conventions")
 - `[README]` markers on directories that have a README
 - Comments only when not self-explanatory
 - Deep modules philosophy — show logical structure, not every file
+- **Source-reachable rule:** an agent reading MAP.md alone must be able to
+  construct the full path to any source file
 
-### 2. Scaffold .docs/
+### 3. Scaffold .docs/
 
 Create directories:
 - `.docs/sketches/`
@@ -56,14 +77,24 @@ Create directories:
 - `.docs/evolve/`
 - `.docs/extensions/`
 
-### 3. Check CLAUDE.md
+### 4. Check CLAUDE.md
 
 Run the CLAUDE.md completeness check (see diagnostic step 2). If missing
 required sections, offer to add them using `references/claude-md-template.md`.
 Walk the user through each missing section with recommended content based on
 codebase analysis (package.json, Makefile, pyproject.toml, etc.).
 
-### 4. Report
+### 5. Deep Module READMEs
+
+After scaffolding, identify deep modules that lack READMEs:
+- 5+ source files, or 3+ subdirectories, or contains entry points
+- Skip self-explanatory leaf directories (di/, dto/, model/)
+
+For qualifying modules: generate starter READMEs with one-line purpose, key
+files, dependencies, and entry point. Present the list to the user for
+approval before generating — not every module needs one.
+
+### 6. Report
 
 Print what was created and what still needs user input. Transition to diagnostic
 mode to validate the setup.
@@ -149,8 +180,15 @@ If `.docs/extensions/` exists:
 ### 8. Research contradictions
 
 If 2+ research docs exist with overlapping `module:` or `tags:`:
-- Read both, compare claims
-- Flag conflicting information between docs on the same topic
+
+**Detection heuristics** (check in order):
+1. **Version conflicts** — docs recommend different versions of the same dependency
+2. **API shape conflicts** — docs describe different signatures, endpoints, or schemas for the same interface
+3. **Architecture conflicts** — docs describe different ownership, data flow, or responsibility boundaries for the same module
+4. **Staleness-driven conflicts** — one doc's `date_updated` is 60+ days older than the other on the same topic
+
+For each detected conflict: flag as WARN with both doc paths, the conflicting
+claims, and which doc is newer. Do not resolve — present to user for judgment.
 
 ### 9. Discoverability audit
 
@@ -178,3 +216,5 @@ Write to `.docs/reports/YYMMDD-health.md` using `references/report-template.md`.
 - Research contradiction detection is agent judgment. Conflicting claims on different aspects of the same topic are normal.
 - Deep module detection uses heuristics (file count, subdirectories, entry points). Not every flagged module needs a README — user decides.
 - Health reports accumulate (one per run). Use git or date prefix to find latest.
+- Shallow discovery = shallow MAP.md. Use `find` at depth 6+ for deep frameworks. A 2-level `ls` misses source code buried in deep scaffolds (KMP, Rust workspaces, Expo monorepos, Go internal packages, etc.).
+- Leaf directories come from `find`, not convention. Different modules in the same framework have different leaf dirs. Verify per module.

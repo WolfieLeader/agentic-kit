@@ -66,7 +66,9 @@ Form directional hypothesis -- not committed, just a starting point.
 ### 5. Dispatch extensions
 
 If `.docs/extensions/diagnose.md` exists, dispatch investigation agents defined
-there. Merge findings into context before routing.
+there. **Wait for all extension findings before proceeding** — steps 6 and 7
+depend on the complete picture (extension findings may change classification,
+severity, or routing decision).
 
 ### 6. Write diagnosis artifact
 
@@ -102,6 +104,7 @@ Passes to: done | craft (lightweight) | sketch (std/deep)
 ## References
 
 - `references/diagnose-template.md` -- YAML frontmatter schema, section template
+- `yo/references/agent-dispatch.md` -- how to compose Agent tool calls (for extension dispatch)
 
 ## Gotchas
 
@@ -110,6 +113,7 @@ Passes to: done | craft (lightweight) | sketch (std/deep)
 - Extension agents from `.docs/extensions/diagnose.md` are optional -- skip gracefully.
 - If reproduction requires destructive action (DB reset, cache clear), warn user first.
 - Symptom is not cause. "API returns 500" is a symptom -- push past it.
+- Extension findings must complete before writing the artifact or routing. An extension agent may reclassify the bug or change the severity — writing the artifact too early captures an incomplete picture.
 
 ## Rationalization Red Flags
 

@@ -37,6 +37,25 @@ Run before any completion claim, in this order:
 - [Naming conventions]
 - [Import conventions]
 
+## GitHub Issue Routing
+[For multi-repo projects. Map issue scope to the correct repository so
+framework issues don't land in application repos and vice versa.]
+
+| Scope | Repository |
+|---|---|
+| Framework / skills / pipeline | [e.g., org/agentic-kit] |
+| [Service/app name] | [e.g., org/backend] |
+| [Service/app name] | [e.g., org/mobile] |
+
+## Cross-Repo Dependencies
+[For multi-repo projects. Map which repos consume APIs, types, or contracts
+from other repos. Used by verify phase for cross-repo contract checks.]
+
+| Provider | Consumer | Contract |
+|---|---|---|
+| [e.g., org/backend] | [e.g., org/mobile] | [e.g., REST /api/v1/*, response types in shared/types] |
+| [e.g., org/backend] | [e.g., org/card-pricing] | [e.g., gRPC PricingService, proto in shared/proto/] |
+
 ## Workflow Artifacts
 - All artifacts in `.docs/` (dotdir, invisible to rg/grep by default)
 - YAML frontmatter on all artifacts for grep-first retrieval

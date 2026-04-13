@@ -32,6 +32,9 @@ Reads:
 
 Gate: **EXPLORE-BEFORE-IMPLEMENT** -- before writing any sketch content, verify understanding by reading actual source.
 
+- **If arriving from EXPLORE transition**: read `.docs/research/<topic>.md` for
+  persisted synthesis. Use in-context explorer findings if still available.
+  Re-dispatch explorers only if research doc is insufficient.
 - Read files referenced by explorer findings
 - Identify affected systems, entry points, data flow
 - Note existing patterns, conventions, test structure

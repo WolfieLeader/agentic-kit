@@ -65,12 +65,18 @@ For "What Went Wrong": write free-text explanation first, then tag with root cau
 
 ### 5. Assess token effort
 
-Set `token_effort` in frontmatter — agent self-assessment of whether this task burned more tokens than its tier/scope warranted:
-- **low**: straightforward, minimal retries or exploration
-- **medium**: expected effort for the scope
-- **high**: significant retries, exploration, or context-heavy work
+Set `token_effort` in frontmatter — agent self-assessment of whether this task
+burned more tokens than its tier/scope warranted. Use these calibration signals:
 
-This feeds `/propose` pattern detection. Consistent `high` on lightweight tasks signals a routing problem.
+| Level | Retry cycles | Explorer dispatches | Circuit breaker hits | Typical signal |
+|---|---|---|---|---|
+| **low** | 0-1 | 0-1 | 0 | Straightforward, first approach worked |
+| **medium** | 2-3 | 1-2 | 0 | Some exploration needed, one wrong turn corrected |
+| **high** | 4+ | 3+ | 1+ | Significant backtracking, multiple approach changes, or context-heavy |
+
+This feeds `/propose` pattern detection. Consistent `high` on lightweight tasks
+signals a routing problem (tasks being under-classified). Consistent `high` on
+a specific module signals the module needs better documentation or conventions.
 
 ### 6. Finalize
 

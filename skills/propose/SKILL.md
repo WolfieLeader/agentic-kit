@@ -77,10 +77,23 @@ Agent judgment -- look for meaningful clusters, not mechanical counting.
 - Review findings that repeat across reviews (systemic code issues)
 - Bug classifications that cluster (e.g., many "environmental" = CI problem)
 
-### 4. Overlap check
+### 4. Overlap and effectiveness check
 
-Grep `.docs/evolve/*-proposals.md` for prior proposals. Avoid duplicates.
-If a prior proposal covers the same ground, reference it instead of re-proposing.
+Grep `.docs/evolve/*-proposals.md` for prior proposals. For each prior proposal
+with `status: completed`:
+
+- **Overlap**: if a new pattern matches a prior proposal's target, don't
+  re-propose the same change.
+- **Effectiveness**: if the same root cause category or pattern reappears
+  AFTER an evolve round addressed it, flag as **regression or insufficient fix**.
+  Compare retros before vs after the evolve date. This catches evolve changes
+  that didn't actually resolve the underlying problem.
+
+Flag format in the proposals file:
+```markdown
+> ⚠ Pattern regression: [root_cause] was addressed in [evolve-slug] on [date]
+> but reappears in [retro-slugs]. Prior fix may be insufficient.
+```
 
 ### 5. Read health report
 
@@ -143,3 +156,4 @@ status: draft
 - Mine ALL data-point directories, not just retros.
 - 3+ occurrences of a root cause category is a signal, not a threshold. Use judgment.
 - Health findings are inputs, not re-run. `/health` does the diagnostics; `/propose` reads the results.
+- Recurring patterns after evolve = insufficient fix, not "the framework hasn't learned yet." Flag regressions explicitly.

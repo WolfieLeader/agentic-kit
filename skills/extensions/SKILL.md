@@ -49,15 +49,23 @@ If not found, tell user where to create it.
 
 ### 5. Assess fit
 
-Does the extension match the phase's expectations?
+Read the agent/skill file. Check for these structural markers per phase:
 
-- **Router extensions**: must return structured output (Key Findings, Relevant Files, Open Questions)
-- **Diagnose extensions**: must provide investigation findings
-- **Craft agent extensions**: must return structured findings (fast checks)
-- **Craft skill extensions**: must follow standard skill format
-- **Verify extensions**: must use evidence-based finding format with severity (P0-P3)
+- **Router extensions**: file must contain `## Key Findings`, `## Relevant Files`,
+  `## Open Questions` sections (or equivalent output format). Check: does the
+  file define an output template matching this structure?
+- **Diagnose extensions**: file must define investigation output with classification
+  support. Check: does it produce findings that feed into the routing decision?
+- **Craft agent extensions**: file must define pass/fail output per check.
+  Check: does the output format include structured findings (not prose)?
+- **Craft skill extensions**: file must have YAML frontmatter with `name:`.
+  Check: does it follow the standard SKILL.md format with a Procedure section?
+- **Verify extensions**: file must define severity-tagged findings (P0-P3) with
+  file:line references. Check: does the output format match the code-reviewer's
+  finding structure (Severity, File/line, Observed, Expected, Why)?
 
-Suggest modifications if format doesn't match.
+If format doesn't match: show the user what's missing and suggest specific
+additions. Do not silently register an extension with incompatible output.
 
 ### 6. Check extension cap
 

@@ -13,7 +13,7 @@ outcome: success                         # success | partial | failed
 module: notifications                    # primary module affected
 affected_modules: [notifications, queue] # all modules touched (omit if single-module)
 tags: [email, queue, workers]            # searchable tags
-token_effort: medium                     # high | medium | low — agent self-assessment
+token_effort: medium                     # low (0-1 retries) | medium (2-3 retries) | high (4+ retries or circuit breaker)
 severity: high                           # FIX only: critical | high | medium | low
 root_cause: poor-test-coverage           # FIX only: enumerated category
 ---

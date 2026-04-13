@@ -128,6 +128,7 @@ Passes to: craft
 ## References
 
 - `references/blueprint-template.md` -- YAML frontmatter schema, unit template, durable decisions structure
+- `yo/references/agent-dispatch.md` -- how to compose Agent tool calls (for blueprint-reviewer dispatch)
 
 ## What blueprints do NOT contain
 
